@@ -1,0 +1,39 @@
+version: "3.7"
+
+volumes:
+  local_test_postgres_data: {}
+
+services:
+
+  api:
+    image: surl_local_api
+    build:
+      context: ../
+      dockerfile: ./docker/local/api/Dockerfile
+    container_name: surl_local_test_api
+    env_file:
+      - ../.envs/.local/.api
+    volumes:
+      - ../surl:/surl:z
+    ports:
+      - 9000:9000
+      - 5678:5678
+    depends_on:
+      - "postgres"
+    tty: true # fixes colored output!
+    command: /start-test
+
+  postgres:
+    image: postgres:14
+    container_name: surl_local_test_postgres
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: test
+      POSTGRES_PASSWORD: test
+      POSTGRES_DB: test
+    ports:
+      - 51432:5432
+    volumes:
+      - local_test_postgres_data:/var/lib/postgresql/data
+    command: -p "5432"

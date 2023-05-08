@@ -1,0 +1,19 @@
+
+
+- Data layer
+
+    - user
+        - id UUID
+        - name STR
+        - email STR
+
+
+    - url
+        - id UUID
+        - short_url STR
+        - target_url STR
+        - is_private BOOL
+        - expiry_period int (num of seconds commencing `added_at`)
+        - added_at DATE
+        - owner UUID FK(user.id)
+

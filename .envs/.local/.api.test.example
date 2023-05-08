@@ -1,0 +1,53 @@
+# General
+# ------------------------------------------------------------------------------
+PROJECT_NAME=nbapp
+DEBUG=1
+API_APP=app.main:app
+PORT=9000
+DEBUG_PORT=5678
+DATABASE_URL=postgresql+asyncpg://postgres:postgres@postgres:5432/postgres
+TEST_DATABASE_URL=postgresql+asyncpg://test:test@postgres:5432/test
+CORS_ORIGINS="http://127.0.0.1,http://127.0.0.1:3000,http://localhost,http://localhost:3000,http://web,http://web:3000"
+
+SECRET_KEY="123"
+SECURITY_PASSWORD_SALT="123"
+
+API_CLIENT_KEY="nbapp"
+API_CLIENT_SECRET="nbapp"
+
+# Postgres DB
+# ------------------------------------------------------------------------------
+DB_HOST=postgres
+DB_PORT=5432
+DB_DB=test
+DB_USER=test
+DB_PASS=test
+
+# TUSD uploader
+# ------------------------------------------------------------------------------
+TUSD_HOST=tusd
+TUSD_PORT=1080
+TUSD_ENDPOINT=/files
+TUSD_UPLOAD_CHUNK=80000
+
+# S3 storage
+# ------------------------------------------------------------------------------
+S3_HOST=minio
+S3_PORT=9000
+S3_REGION=us-east-1
+S3_ACCESS_KEY=password123
+S3_SECRET_KEY=password123
+S3_BUCKET_NAME=basins
+
+# Localtunnel
+# ------------------------------------------------------------------------------
+LOCALTUNNEL_SUBDOMAIN=nbapp
+
+# Terminal
+# ------------------------------------------------------------------------------
+# setting both $COLUMNS and $LINES fixes a terminal size issue, if not set
+# fastapi app logging (rich) gets limited to 80 columns or so making the output
+# look ugly. Customize these variables according to your current terminal
+# configuration
+COLUMNS=160
+LINES=40

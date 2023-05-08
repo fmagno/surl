@@ -1,0 +1,15 @@
+-r base.txt
+
+aiosqlite           # https://github.com/omnilib/aiosqlite
+black               # https://github.com/ambv/black
+coverage            # https://github.com/nedbat/coveragepy
+debugpy             # https://github.com/microsoft/debugpy
+flake8              # https://github.com/PyCQA/flake8
+flake8-isort        # https://github.com/gforcada/flake8-isort
+ipython             # https://github.com/ipython/ipython
+isort               # https://github.com/PyCQA/isort
+pre-commit          # https://github.com/pre-commit/pre-commit
+python-dotenv       # https://github.com/theskumar/python-dotenv
+tox                 # https://github.com/tox-dev/tox
+trio                # https://github.com/python-trio/trio
+watchdog            # https://github.com/gorakhargosh/watchdog

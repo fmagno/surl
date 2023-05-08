@@ -1,0 +1,48 @@
+version: "3.7"
+
+volumes:
+  local_postgres_data: {}
+
+services:
+
+  api:
+    image: surl_local_api
+    build:
+      context: ../
+      dockerfile: ./docker/local/api/Dockerfile
+    container_name: surl_local_api
+    env_file:
+      - ../.envs/.local/.api
+    volumes:
+      - ../surl:/surl:z
+    ports:
+      - 9000:9000
+      - 5678:5678
+    depends_on:
+      - "postgres"
+    tty: true # fixes colored output!
+    command: /start
+
+  postgres:
+    image: postgres:14
+    container_name: surl_local_postgres
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: postgres
+    ports:
+      - 50432:5432
+    volumes:
+      - local_postgres_data:/var/lib/postgresql/data
+    command: -p "5432"
+
+  # localtunnel:
+  #   image: efrecon/localtunnel
+  #   container_name: surl_local_localtunnel
+  #   links:
+  #     - api
+  #   command: --local-host api --port 9000 --subdomain ${LOCALTUNNEL_SUBDOMAIN:-surl}
+  #   depends_on:
+  #     - api

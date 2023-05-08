@@ -1,0 +1,19 @@
+#!/bin/sh
+
+set -o errexit
+set -o pipefail
+set -o nounset
+
+
+echo "Starting pytest..."
+
+python -m pytest .
+
+# python -m debugpy \
+#     --listen 0.0.0.0:${DEBUG_PORT} \
+#     --wait-for-client \
+#     -m pytest \
+#         . \
+#         --no-cov  # disable coverage to avoid messing with debugger[1]
+
+# [1] https://pytest-cov.readthedocs.io/en/latest/debuggers.html
