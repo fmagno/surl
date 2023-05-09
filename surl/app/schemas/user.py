@@ -1,7 +1,7 @@
 import uuid
 from typing import TYPE_CHECKING, Optional
 
-from pydantic import Extra
+from pydantic import BaseModel, Extra
 from sqlmodel import Relationship, SQLModel
 
 from app.schemas.base import Base
@@ -10,9 +10,12 @@ if TYPE_CHECKING:
     from app.schemas.url import UrlDb
 
 
-class UserBase(SQLModel):
+class UserBase(BaseModel):
     name: str
     email: str
+
+
+# DB schemas
 
 
 class UserDbRead(UserBase):
@@ -28,7 +31,28 @@ class UserDbUpdate(SQLModel):
     email: Optional[str]
 
 
+class UserDbList(BaseModel):
+    count: int
+    data: list[UserDbRead]
+
+
 class UserDb(Base, UserBase, table=True):
     __tablename__ = "user"
 
     urls: list["UrlDb"] = Relationship(back_populates="user")
+
+
+# Routing schemas
+
+
+class UserRouteRetrieve(UserDbRead):
+    ...
+
+
+class UserRouteList(BaseModel):
+    data: list[UserRouteRetrieve]
+    count: int
+
+
+class UserRouteUpdate(BaseModel):
+    name: str

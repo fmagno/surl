@@ -1,19 +1,97 @@
 
 
-- Data layer
+- Use cases:
+    - As a logged in user I can submit a url to obtain a short url, through:
+        - frontend
+        - api
+    - As a logged in user I can view the urls history with detailed information (short url, target url, is_private, expiry_period, added_at, user), through:
+        - frontend
+        - api
+    - As an admin user I can view the whole list of users [WIP]
 
-    - user
-        - id UUID
-        - name STR
-        - email STR
+
+- Schemas:
+    - ErrorBase:
+        - code: str
+        - message: str
+
+    - UrlRouteCreateReq:
+        - target: str
+        - is_private: bool
+        - expiry_period: int
+
+    - UrlRouteCreateRes(UrlRouteRetrieve):
+        ...
+
+    - UrlRouteList:
+        - urls: list[UrlRouteRetrieve]
+        - count: int
+
+    - UrlRouteRetrieve:
+        - id: uuid
+        - short: str
+        - target: str
+        - is_private: bool
+        - expiry_period: int
+        - added_at: date
+        - user_id: uuid
+
+    - UrlRouteUpdateReq:
+        - is_private: Optional[bool]
+        - expiry_period: Optional[int]
+
+    - UrlRouteUpdateRes(UrlRouteRetrieve):
+        ...
+
+    - UserRouteList:
+        - users: list[UserRouteRetrieve]
+        - count: int
+
+    - UserRouteRetrieve:
+        - id: uuid
+        - name: str
+        - email: str
+
+    - UserRouteUpdateReq:
+        - name
+
+    - UserRouteUpdateRes(UserRouteRetrieve):
+        ...
+
+- Routes:
+    - POST /urls
+    - GET /urls
+    - GET /urls/:id
+    - PATCH /urls/:id
+
+    - GET /users
+    - GET /users/:id
+    - GET /users/me
+    - PATCH /users/:id
+        - name
+    - PATCH /users/me
+        - name
 
 
-    - url
-        - id UUID
-        - short_url STR
-        - target_url STR
-        - is_private BOOL
-        - expiry_period int (num of seconds commencing `added_at`)
-        - added_at DATE
-        - owner UUID FK(user.id)
+
+- Services:
+
+
+
+- Data layer:
+
+    - Models:
+        - user
+            - id: uuid
+            - name: str
+            - email: str
+
+        - url
+            - id: uuid
+            - short: str
+            - target: str
+            - is_private: bool
+            - expiry_period: int (num of seconds commencing `added_at`)
+            - added_at: date
+            - user_id: uuid FK(user.id)
 

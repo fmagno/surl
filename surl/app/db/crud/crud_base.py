@@ -16,13 +16,19 @@ from app.schemas.base import Base
 ModelType = TypeVar("ModelType", bound=Base)
 CreateSchemaType = TypeVar("CreateSchemaType", bound=BaseModel)
 UpdateSchemaType = TypeVar("UpdateSchemaType", bound=BaseModel)
+ListSchemaType = TypeVar("ListSchemaType", bound=BaseModel)
 
 logger: logging.Logger = logging.getLogger(__name__)
 
 
-class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
-    def __init__(self, model: Type[ModelType]) -> None:
+class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType, ListSchemaType]):
+    def __init__(
+        self,
+        model: Type[ModelType],
+        list_model: Type[ListSchemaType],
+    ) -> None:
         self.model = model
+        self.list_model = list_model
 
     async def get(
         self, db: AsyncSession, id: Union[uuid.UUID, str]
@@ -37,13 +43,18 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         db: AsyncSession,
         skip: Optional[int] = 0,
         limit: Optional[int] = None,
-    ) -> List[ModelType]:
+    ) -> ListSchemaType:
+        stmt_count = select(func.count()).select_from(self.model)
+        result = await db.execute(stmt_count)
+        count = result.scalar_one()
+
         stmt = select(self.model).offset(skip)
+
         if limit:
             stmt = stmt.limit(limit)
         result = await db.execute(stmt)
-        entries = result.scalars()
-        return list(entries)
+        entries = result.scalars().all()
+        return self.list_model(data=entries, count=count)
 
     async def create(
         self,
