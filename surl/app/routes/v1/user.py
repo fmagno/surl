@@ -8,11 +8,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.db.crud.crud_url import crud_url
 from app.db.crud.crud_user import crud_user
 from app.db.session import get_db
+from app.schemas import user
 from app.schemas.url import UrlDbList, UrlRouteList, UrlRouteRetrieve
 
 # from app.core.config import settings
 from app.schemas.user import UserDb, UserDbList, UserDbRead, UserRouteList
-from app.schemas import user
 
 # from fastapi.encoders import jsonable_encoder
 # from pydantic.networks import EmailStr
@@ -28,9 +28,7 @@ async def list_users(
     limit: int = 100,
     # current_user: models.User = Depends(deps.get_current_active_superuser),
 ) -> UserRouteList:
-    """
-    List users.
-    """
+    """List users."""
 
     try:
         users_db: UserDbList = await crud_user.get_multi(db, skip=skip, limit=limit)
@@ -49,9 +47,7 @@ async def list_urls(
     skip: int = 0,
     limit: int = 10,
 ) -> UrlRouteList:
-    """
-    List urls by user_id.
-    """
+    """List urls by user_id."""
 
     # TODO: Deal with authentication/authorisation
 

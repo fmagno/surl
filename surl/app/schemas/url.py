@@ -55,7 +55,7 @@ class UrlDb(Base, UrlBase, table=True):
 # Routing schemas
 
 
-class UrlRouteCreate:
+class UrlRouteCreate(BaseModel):
     target: str
     is_private: bool
     expiry_period: int

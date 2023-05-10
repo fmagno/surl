@@ -10,13 +10,13 @@ from app.core.auth import (
     basic_auth_token,
     oauth2_token_payload,
 )
-from app.core.config import get_settings
+from app.core.config import Settings, get_settings
 from app.core.exceptions import HTTP401UnauthorizedException
 from app.schemas.auth import Token, TokenPayload
 from app.schemas.http_errors import HTTP401UnauthorizedContent
 
 auth_router = APIRouter()
-settings = get_settings()
+settings: Settings = get_settings()
 
 
 @auth_router.post(
