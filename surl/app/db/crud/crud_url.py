@@ -4,16 +4,11 @@ from logging import Logger
 from typing import Optional
 
 from sqlalchemy.ext.asyncio import AsyncSession
-
-# from sqlmodel import func
+from sqlalchemy.future import select
 from sqlalchemy.sql.expression import func
-
 
 from app.db.crud.crud_base import CRUDBase
 from app.schemas.url import UrlDb, UrlDbCreate, UrlDbList, UrlDbUpdate
-
-from sqlalchemy.future import select
-
 
 logger: Logger = logging.getLogger(__name__)
 

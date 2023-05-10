@@ -1,20 +1,37 @@
-from typing import List
+import datetime as dt
 
 from fastapi import APIRouter, Depends
-from pydantic import parse_obj_as  # Body,; HTTPException,
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.db.crud.crud_url import crud_url
+from app.core.auth import oauth2_token_payload
 from app.db.session import get_db
-
-# from app.core.config import settings
-from app.schemas.url import UrlDb, UrlDbList, UrlDbRead, UrlRouteList
+from app.schemas.auth import TokenPayload
+from app.schemas.url import UrlRouteCreate, UrlRouteRetrieve
 
 # from fastapi.encoders import jsonable_encoder
 # from pydantic.networks import EmailStr
 
 
 url_router = APIRouter()
+
+
+@url_router.post("/", response_model=UrlRouteRetrieve)
+async def create_url(
+    *,
+    db: AsyncSession = Depends(get_db),
+    url: UrlRouteCreate,
+    # current_user: UserDb = Depends(get_current_user),
+    auth_token_payload: TokenPayload = Depends(oauth2_token_payload),
+) -> UrlRouteRetrieve:
+    """Create new url."""
+    new_url = UrlRouteRetrieve(
+        short="",
+        target="",
+        is_private=False,
+        expiry_period=100,
+        added_at=dt.datetime.now(),
+    )
+    return new_url
 
 
 # @url_router.get("/", response_model=UrlRouteList)
@@ -35,30 +52,6 @@ url_router = APIRouter()
 #         raise e
 
 #     return urls
-
-
-# @url_router.post("/", response_model=schemas.User)
-# def create_url(
-#     *,
-#     db: Session = Depends(deps.get_db),
-#     url_in: schemas.UrlCreate,
-#     current_url: models.User = Depends(deps.get_current_active_superuser),
-# ) -> Any:
-#     """
-#     Create new user.
-#     """
-#     user = crud.user.get_by_email(db, email=url_in.email)
-#     if user:
-#         raise HTTPException(
-#             status_code=400,
-#             detail="The user with this username already exists in the system.",
-#         )
-#     user = crud.user.create(db, obj_in=url_in)
-#     if settings.EMAILS_ENABLED and url_in.email:
-#         send_new_account_email(
-#             email_to=url_in.email, username=url_in.email, password=url_in.password
-#         )
-#     return user
 
 
 # @url_router.put("/me", response_model=schemas.User)
