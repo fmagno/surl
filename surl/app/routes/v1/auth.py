@@ -65,6 +65,6 @@ async def login_access_token(
 )
 async def test_token(
     auth_token_payload: TokenPayload = Depends(oauth2_token_payload),
-):
+) -> Response:
     """Test access token."""
     return Response(status_code=status.HTTP_204_NO_CONTENT)
