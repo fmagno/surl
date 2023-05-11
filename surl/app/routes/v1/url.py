@@ -1,4 +1,6 @@
 import datetime as dt
+import uuid
+from uuid import UUID
 
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -20,16 +22,17 @@ async def create_url(
     *,
     db: AsyncSession = Depends(get_db),
     url: UrlRouteCreate,
-    # current_user: UserDb = Depends(get_current_user),
     auth_token_payload: TokenPayload = Depends(oauth2_token_payload),
 ) -> UrlRouteRetrieve:
     """Create new url."""
     new_url = UrlRouteRetrieve(
+        id=uuid.UUID("f129f2c0-c9cd-4738-b9ad-65d74469ba27"),
         short="",
         target="",
         is_private=False,
         expiry_period=100,
         added_at=dt.datetime.now(),
+        user_id=uuid.UUID("f7750343-fa77-4e01-8016-1004cd11575a"),
     )
     return new_url
 

@@ -1,18 +1,21 @@
-from typing import Dict, Optional
+from typing import Dict, Optional, Tuple
 
 from fastapi import Depends, Form, Request
+from fastapi.openapi.models import (
+    OAuthFlowAuthorizationCode,
+    OAuthFlowClientCredentials,
+    OAuthFlows,
+)
 from fastapi.security import HTTPBasic
-from fastapi.security.oauth2 import OAuth2, OAuthFlowsModel
+from fastapi.security.oauth2 import OAuth2  # , OAuthFlowsModel
 from fastapi.security.utils import get_authorization_scheme_param
-from jose import jwt
-from pydantic import ValidationError
 
 from app.core import security
-from app.core.config import get_settings
+from app.core.config import Settings, get_settings
 from app.core.exceptions import HTTP401UnauthorizedException
 from app.schemas.auth import TokenPayload
 
-settings = get_settings()
+settings: Settings = get_settings()
 
 
 class OAuth2ClientCredentialsRequestForm:
@@ -38,11 +41,11 @@ class OAuth2ClientCredentialsRequestForm:
         scope: str = Form(""),
         client_id: Optional[str] = Form(None),
         client_secret: Optional[str] = Form(None),
-    ):
-        self.grant_type = grant_type
-        self.scopes = scope.split()
-        self.client_id = client_id
-        self.client_secret = client_secret
+    ) -> None:
+        self.grant_type: str = grant_type
+        self.scopes: list[str] = scope.split()
+        self.client_id: Optional[str] = client_id
+        self.client_secret: Optional[str] = client_secret
 
 
 class OAuth2ClientCredentials(OAuth2):
@@ -58,19 +61,20 @@ class OAuth2ClientCredentials(OAuth2):
         tokenUrl: str,
         scheme_name: Optional[str] = None,
         scopes: Optional[Dict[str, str]] = None,
-    ):
+    ) -> None:
         if not scopes:
             scopes = {}
-        flows = OAuthFlowsModel(
-            clientCredentials={"tokenUrl": tokenUrl, "scopes": scopes}
+        flows = OAuthFlows(
+            clientCredentials=OAuthFlowClientCredentials(
+                tokenUrl=tokenUrl, scopes=scopes
+            )
         )
         super().__init__(flows=flows, scheme_name=scheme_name, auto_error=True)
 
     async def __call__(self, request: Request) -> Optional[str]:
-        authorization: str = request.headers.get("Authorization")
-        scheme_param = get_authorization_scheme_param(authorization)
-        scheme: str = scheme_param[0]
-        param: str = scheme_param[1]
+        authorization: Optional[str] = request.headers.get("Authorization")
+        scheme_param: Tuple[str, str] = get_authorization_scheme_param(authorization)
+        scheme, param = scheme_param
 
         if not authorization or scheme.lower() != "bearer":
             raise HTTP401UnauthorizedException()
@@ -89,7 +93,7 @@ basic_auth_token = HTTPBasic(auto_error=False)
 
 
 async def oauth2_token_payload(token: str = Depends(oauth2_token)) -> TokenPayload:
-    token_payload = security.decode_token(token)
+    token_payload: Optional[TokenPayload] = security.decode_token(token)
     if not token_payload:
         raise HTTP401UnauthorizedException()
     return token_payload
