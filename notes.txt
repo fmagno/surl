@@ -95,3 +95,29 @@
             - added_at: date
             - user_id: uuid FK(user.id)
 
+
+
+# AUTH
+
+- Middleware:
+    - Check session_id in request
+    - Check session_id is part of an existing open session (in active sessions table)
+    - If both conditions check proceed to return the resource requested
+    - Else the response is a redirect to the Authorisation Server:
+        - Client id (query args)
+        - Redirection URI (query args): where the client can receive the AuthCode (from the auth server) and later start a new session for the user
+
+- Endpoint:
+    - POST /auth/token QueryParams: `code`
+        - implementation:
+            - POST/(GET?) exchange `code` with `token`
+                - response:
+                    - id_token (JWT):
+                        - sub: user
+                        - iss: IdP e.g Google, github
+                        - aud: client
+                    - access_token (opaque token)
+                    - refresh_token (opaque token)
+
+
+

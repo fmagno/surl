@@ -38,11 +38,13 @@ services:
       - local_postgres_data:/var/lib/postgresql/data
     command: -p "5432"
 
-  # localtunnel:
-  #   image: efrecon/localtunnel
-  #   container_name: surl_local_localtunnel
-  #   links:
-  #     - api
-  #   command: --local-host api --port 9000 --subdomain ${LOCALTUNNEL_SUBDOMAIN:-surl}
-  #   depends_on:
-  #     - api
+  localtunnel:
+    image: efrecon/localtunnel
+    container_name: surl_local_localtunnel
+    # ports:
+    #   - 8888:80
+    links:
+      - api
+    command: --local-host api --port 9000 --subdomain ${LOCALTUNNEL_SUBDOMAIN:-surl}
+    depends_on:
+      - api
