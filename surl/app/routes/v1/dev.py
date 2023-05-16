@@ -1,7 +1,7 @@
 import logging
 from typing import Any
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, Request, Response, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import Settings, get_settings
@@ -42,8 +42,12 @@ class HTTP400DevContent(HTTP400BadRequestContent):
     include_in_schema=settings.DEBUG,
 )
 async def dev1(
+    request: Request,
+    response: Response,
     db: AsyncSession = Depends(get_db),
 ) -> str:
     """Dev 1 endpoint."""
+
+    print("asd")
 
     return "Done!"
