@@ -36,22 +36,29 @@ async def login(
 
     client_id: str = ""
     redirect_uri: str = ""
-    login: str = ""
-    scope: str = ""
-    state: UUID = uuid4()
-    allow_signup: bool = True
-    github_authorize_url: str = (
-        f"https://github.com/login/oauth/authorize"
-        f"?client_id={client_id}"
+    code_challenge: str = ""
+    code_challenge_method: str = ""
+    twitter_authorize_url: str = (
+        # github
+        # f"https://github.com/login/oauth/authorize"
+        # f"?client_id={client_id}"
+        # f"&redirect_uri={redirect_uri}"
+        # f"&login={login}"
+        # f"&scope={scope}"
+        # f"&state={state}"
+        # f"&allow_signup={allow_signup}"
+        #
+        # twitter
+        "https://twitter.com/i/oauth2/authorize"
+        "?response_type=code"
+        f"&client_id={client_id}"
         f"&redirect_uri={redirect_uri}"
-        f"&login={login}"
-        f"&scope={scope}"
-        f"&state={state}"
-        f"&allow_signup={allow_signup}"
+        f"&code_challenge={code_challenge}"
+        f"&code_challenge={code_challenge_method}"
     )
 
     return RedirectResponse(
-        github_authorize_url,
+        twitter_authorize_url,
     )
 
 

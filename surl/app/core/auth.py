@@ -81,15 +81,15 @@ class OAuth2ClientCredentials(OAuth2):
         return param
 
 
-# oauth2_token = OAuth2ClientCredentials(
-#     tokenUrl=f"{settings.API_V1_STR}/auth/token",
-#     scopes={
-#         "write": "write permission",
-#         "read": "read permission",
-#     },
-# )
-
 oauth2_token = OAuth2ClientCredentials(
+    tokenUrl=f"{settings.API_V1_STR}/auth/token",
+    scopes={
+        "write": "write permission",
+        "read": "read permission",
+    },
+)
+
+oauth2_code = OAuth2ClientCredentials(
     tokenUrl=f"{settings.API_V1_STR}/auth/token",
     scopes={
         "write": "write permission",
