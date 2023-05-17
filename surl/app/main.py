@@ -4,8 +4,9 @@ from typing import Optional
 
 import uvicorn
 from fastapi import FastAPI, Request, Response, status
-from fastapi_utils.timing import add_timing_middleware
+from fastapi.middleware import Middleware
 from fastapi_utils.session import FastAPISessionMaker
+from fastapi_utils.timing import add_timing_middleware
 
 # from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 from starlette.middleware.cors import CORSMiddleware
@@ -28,8 +29,6 @@ from app.core.logging import setup_logger
 from app.db.sanity import check_db_is_ready
 from app.db.session import close_engine
 from app.routes.v1 import router_v1
-
-from fastapi.middleware import Middleware
 
 logger: logging.Logger = logging.getLogger(__name__)
 settings: Settings = get_settings()
