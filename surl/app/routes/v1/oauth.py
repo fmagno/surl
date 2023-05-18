@@ -22,6 +22,8 @@ from app.schemas.http_errors import HTTP401UnauthorizedContent
 from app.schemas.oauth import State
 from app.utils.github_client import get_oauth2_access_token
 
+from operator import attrgetter
+
 oauth_router = APIRouter()
 settings: Settings = get_settings()
 
@@ -40,24 +42,23 @@ async def login(
     #   - redirect URL to the endpoint responsible for code - token exchange
     #   - client_id
 
-    client_id: str = "CLIENT_ID"
-    redirect_uri: str = "https://surl.loca.lt/api/v1/oauth/code"
+    # client_id: str = "e7f6c07286db18050e21"
+    # code_redirect_uri: str = "https://surl.loca.lt/api/v1/oauth/code"
     login: str = ""
-    scope: str = "read:user user:email"
+    # scope: str = "read:user user:email"
     state: str = urlsafe_b64encode(
         State(next="https://github.com/api/docs", salt="01010101010").json().encode()
     ).decode()
-    allow_signup: bool = True
 
     github_authorize_url: str = (
         # github
-        f"https://github.com/login/oauth/authorize"
-        f"?client_id={client_id}"
-        f"&redirect_uri={redirect_uri}"
+        f"{settings.GITHUB_OAUTH_AUTHORIZE_REDIRECT_URI}"
+        f"?client_id={settings.GITHUB_OAUTH_CLIENT_ID}"
+        f"&redirect_uri={settings.GITHUB_OAUTH_CODE_REDIRECT_URI}"
         f"&login={login}"
-        f"&scope={scope}"
+        f"&scope={settings.GITHUB_OAUTH_SCOPE}"
         f"&state={state}"
-        f"&allow_signup={allow_signup}"
+        f"&allow_signup={settings.GITHUB_OAUTH_ALLOW_SIGNUP}"
     )
 
     return RedirectResponse(
@@ -84,8 +85,8 @@ async def code(
 
     s: State = State.parse_raw(urlsafe_b64decode(state.encode()).decode())
     token = await get_oauth2_access_token(
-        client_id="CLIENT_ID",
-        client_secret="CLIENT_SECRET",
+        client_id=settings.GITHUB_OAUTH_CLIENT_ID,
+        client_secret=settings.GITHUB_OAUTH_CLIENT_SECRET,
         code=code,
         redirect_uri="https://surl.loca.lt/api/v1/oauth/code",
     )
