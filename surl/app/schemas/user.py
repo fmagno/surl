@@ -8,6 +8,7 @@ from app.schemas.base import Base
 
 if TYPE_CHECKING:
     from app.schemas.url import UrlDb
+    from app.schemas.session import SessionDb
 
 
 class UserBase(BaseModel):
@@ -40,6 +41,7 @@ class UserDb(Base, UserBase, table=True):
     __tablename__ = "user"
 
     urls: list["UrlDb"] = Relationship(back_populates="user")
+    sessions: list["SessionDb"] = Relationship(back_populates="user")
 
 
 # Routing schemas

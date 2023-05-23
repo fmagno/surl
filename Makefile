@@ -76,6 +76,10 @@ stop:
 stop-api:
 	docker compose -f docker/docker-compose.local.yml rm -svf api
 
+.PHONY: restart
+restart: stop run logs
+
+
 
 #--- DB -------------------------------#
 

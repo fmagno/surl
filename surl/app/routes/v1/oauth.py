@@ -79,24 +79,19 @@ async def code(
     # basic_auth_user_pass: Optional[HTTPBasicCredentials] = Depends(basic_auth_token),
 ) -> RedirectResponse:
     """"""
-    # construct redirect URL for the authorisation server with:
-    #   - redirect URL to the endpoint responsible for code - token exchange
-    #   - client_id
-
     s: State = State.parse_raw(urlsafe_b64decode(state.encode()).decode())
     token = await get_oauth2_access_token(
         client_id=settings.GITHUB_OAUTH_CLIENT_ID,
         client_secret=settings.GITHUB_OAUTH_CLIENT_SECRET,
         code=code,
-        redirect_uri="https://surl.loca.lt/api/v1/oauth/code",
+        redirect_uri=settings.GITHUB_OAUTH_CODE_REDIRECT_URI,
     )
 
     # print(request.headers)
 
-    return ""
-    # return RedirectResponse(
-    #     github_authorize_url,
-    # )
+    return RedirectResponse(
+        "https://surl.loca.lt/api/docs",
+    )
 
 
 # @auth_router.post(

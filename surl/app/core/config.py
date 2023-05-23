@@ -42,6 +42,8 @@ class Settings(BaseSettings):
     GITHUB_OAUTH_AUTHORIZE_REDIRECT_URI: str
     GITHUB_OAUTH_ALLOW_SIGNUP: bool
 
+    SESSION_MAX_AGE: int
+
     class Config:
         case_sensitive = True
 

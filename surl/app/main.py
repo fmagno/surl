@@ -3,7 +3,7 @@ from pprint import pformat
 from typing import Optional
 
 import uvicorn
-from fastapi import FastAPI, Request, Response, status
+from fastapi import Depends, FastAPI, Request, Response, status
 from fastapi.middleware import Middleware
 from fastapi_utils.session import FastAPISessionMaker
 from fastapi_utils.timing import add_timing_middleware
@@ -29,6 +29,9 @@ from app.core.logging import setup_logger
 from app.db.sanity import check_db_is_ready
 from app.db.session import close_engine
 from app.routes.v1 import router_v1
+from app.services.session import SessionService, get_session_service
+
+from app.services.session import create_service as create_session_service
 
 logger: logging.Logger = logging.getLogger(__name__)
 settings: Settings = get_settings()
@@ -57,16 +60,33 @@ if settings.CORS_ORIGINS:
         allow_headers=["*"],
     )
 
-app.add_middleware(middleware_class=SessionMiddleware, secret_key=settings.SECRET_KEY)
-
 
 @app.middleware("http")
-async def some_middleware(request: Request, call_next) -> Response:
-    response: Response = await call_next(request)
-    session: Optional[str] = request.cookies.get("session")
-    if session:
-        response.set_cookie(key="session", value=session, httponly=True)
+async def session_middleware_appendix(
+    request: Request,
+    call_next,
+):
+    response = await call_next(request)
+
+    session_value = request.cookies.get("session")
+    if session_value:
+        response.set_cookie(
+            key="session",
+            value=session_value,
+            httponly=True,
+            secure=True,
+            max_age=settings.SESSION_MAX_AGE,
+        )
+
     return response
+
+
+app.add_middleware(
+    middleware_class=SessionMiddleware,
+    secret_key=settings.SECRET_KEY,
+    https_only=True,
+    max_age=settings.SESSION_MAX_AGE,
+)
 
 
 # setup logging

@@ -3,7 +3,14 @@ import uuid
 from typing import TYPE_CHECKING, Optional
 
 from pydantic import BaseModel, Extra
-from sqlmodel import Column, DateTime, Field, Relationship, SQLModel, func
+from sqlmodel import (
+    Column,
+    DateTime,
+    Field,
+    Relationship,
+    SQLModel,
+    func,
+)
 
 from app.schemas.base import Base
 

@@ -11,6 +11,7 @@ from sqlalchemy.orm import sessionmaker
 from app.core import config
 from app.db.models import *  # noqa: F403, F401
 
+
 settings = config.get_settings()
 
 
