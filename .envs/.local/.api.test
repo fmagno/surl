@@ -5,9 +5,12 @@ DEBUG=1
 API_APP=app.main:app
 PORT=9000
 DEBUG_PORT=5678
-DATABASE_URL=postgresql+asyncpg://postgres:postgres@postgres:5432/postgres
-TEST_DATABASE_URL=postgresql+asyncpg://test:test@postgres:5432/test
+# DATABASE_URL=postgresql+asyncpg://postgres:postgres@postgres:5432/postgres
+DATABASE_URL=postgresql+asyncpg://test:test@postgres:5432/test
+# TEST_DATABASE_URL=postgresql+asyncpg://test:test@postgres:5432/test
 CORS_ORIGINS="http://127.0.0.1,http://127.0.0.1:3000,http://localhost,http://localhost:3000,http://web,http://web:3000"
+BASE_URL="http://api:9000/api"
+
 
 SECRET_KEY="123"
 SECURITY_PASSWORD_SALT="123"
@@ -19,7 +22,7 @@ API_CLIENT_SECRET="nbapp"
 # ------------------------------------------------------------------------------
 DB_HOST=postgres
 DB_PORT=5432
-DB_DB=test
+DB_NAME=test
 DB_USER=test
 DB_PASS=test
 
@@ -51,3 +54,16 @@ LOCALTUNNEL_SUBDOMAIN=nbapp
 # configuration
 COLUMNS=160
 LINES=40
+
+# Github
+
+# OAuth client credentials
+GITHUB_OAUTH_CLIENT_ID='e7f6c07286db18050e21'
+GITHUB_OAUTH_CLIENT_SECRET='989ebc4d82b86c23b1402aec3f9d7386de417556'
+GITHUB_OAUTH_SCOPE='read:user user:email'
+GITHUB_OAUTH_CODE_REDIRECT_URI='https://surl.loca.lt/api/v1/oauth/code'
+GITHUB_OAUTH_AUTHORIZE_REDIRECT_URI='https://github.com/login/oauth/authorize'
+GITHUB_OAUTH_ALLOW_SIGNUP=true
+
+# 2 weeks in seconds
+SESSION_MAX_AGE=1209600

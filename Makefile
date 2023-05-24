@@ -25,7 +25,7 @@ format:
 
 .PHONY: run-test
 run-test: stop clean
-	docker compose -f docker/docker-compose.local.test.yml up -d api
+	docker compose -f docker/docker-compose.local.test.yml up -d
 	docker compose -f docker/docker-compose.local.test.yml logs -f
 
 .PHONY: run-test-prod

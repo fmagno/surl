@@ -1,4 +1,5 @@
 import asyncio
+from typing import AsyncGenerator
 
 import pytest
 from httpx import AsyncClient
@@ -6,14 +7,14 @@ from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engin
 from sqlalchemy.orm import sessionmaker
 from sqlmodel import SQLModel
 
-from app.core import config
 from app.db.session import get_db
 from app.main import app
 from app.schemas.auth import TokenPayload
+from app.core.config import Settings, get_settings
 
-settings = config.get_settings()
+settings: Settings = get_settings()
 
-pytest_plugins = [
+pytest_plugins: list = [
     # "app.tests.example_module",
 ]
 
@@ -25,29 +26,31 @@ def anyio_backend():
 
 @pytest.fixture()
 def base_url() -> str:
-    return "http://localhost:9000/api"
+    return settings.BASE_URL
 
 
 @pytest.fixture()
 def db_url() -> str:
-    return settings.TEST_DATABASE_URL
+    return settings.DATABASE_URL
+
+
+# @pytest.fixture()
+# def client_key_secret() -> tuple[str, str]:
+#     return (settings.API_CLIENT_KEY, settings.API_CLIENT_SECRET)
+
+
+# @pytest.fixture()
+# def valid_client_token_payload(client_key_secret: tuple[str, str]) -> TokenPayload:
+#     client_key, client_secret = client_key_secret
+#     return TokenPayload(
+#         sub=client_key,
+#     )
 
 
 @pytest.fixture()
-def client_key_secret() -> tuple[str, str]:
-    return (settings.API_CLIENT_KEY, settings.API_CLIENT_SECRET)
-
-
-@pytest.fixture()
-def valid_client_token_payload(client_key_secret: tuple[str, str]) -> TokenPayload:
-    client_key, client_secret = client_key_secret
-    return TokenPayload(
-        sub=client_key,
-    )
-
-
-@pytest.fixture()
-async def create_db(anyio_backend: str, db_url: str) -> AsyncEngine:
+async def create_db(
+    anyio_backend: str, db_url: str
+) -> AsyncGenerator[AsyncEngine, None]:
     """Create a test database and use it for the whole test session."""
     test_engine: AsyncEngine = create_async_engine(
         db_url,
@@ -77,7 +80,7 @@ async def create_db(anyio_backend: str, db_url: str) -> AsyncEngine:
 async def db_session(create_db: AsyncEngine):
     """Prepare database session."""
 
-    engine = create_db
+    engine: AsyncEngine = create_db
 
     async_session_factory = sessionmaker(
         engine,
@@ -87,7 +90,7 @@ async def db_session(create_db: AsyncEngine):
         autoflush=False,
     )
 
-    async with async_session_factory.begin() as session:
+    async with async_session_factory() as session:
         # ... setup
         yield session
         # ... teardown

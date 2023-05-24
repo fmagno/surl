@@ -70,48 +70,41 @@ async def get_session_service(
     return session_svc
 
 
-async def get_or_create_session(
+async def create_session(
+    db: AsyncSession,
+    *,
     request: Request,
-    db: AsyncSession = Depends(get_db),
 ) -> SessionDb:
-    # #
-    # session_id: str = request.session.get("surl_session", "")
-    # session_db: Optional[SessionDb] = await crud_session.get(
-    #     db=db,
-    #     id=session_id,
-    # )
+    session_db: SessionDb = await crud_session.create(
+        db=db,
+        obj_in=SessionDbCreate(),
+        commit=True,
+    )
+    request.session["surl_session"] = str(session_db.id)
+    return session_db
 
-    # if not session_db:
-    #     session_db = await crud_session.create(
-    #         db=db,
-    #         obj_in=SessionDbCreate(),
-    #         commit=True,
-    #         # refresh=True,
-    #     )
-    #     request.session["surl_session"] = str(session_db.id)
 
-    # #
-    create_session = False
+async def get_or_create_session(
+    db: AsyncSession = Depends(get_db),
+    *,
+    request: Request,
+    response: Response,
+) -> SessionDb:
     if request.session:
-        try:
-            session_db: Optional[SessionDb] = await crud_session.get(
-                db=db,
-                id=request.session["surl_session"],
-            )
-        except Exception:
-            create_session = True
-        if not session_db:
-            create_session = True
-    else:
-        create_session = True
-
-    if create_session:
-        session_db = await crud_session.create(
+        session_db: Optional[SessionDb] = await crud_session.get(
             db=db,
-            obj_in=SessionDbCreate(),
-            commit=True,
-            # refresh=True,
+            id=request.session["surl_session"],
         )
-        request.session["surl_session"] = str(session_db.id)
+        if not session_db:
+            response.delete_cookie("surl_session")
+            session_db = await create_session(
+                db=db,
+                request=request,
+            )
+    else:
+        session_db = await create_session(
+            db=db,
+            request=request,
+        )
 
     return session_db

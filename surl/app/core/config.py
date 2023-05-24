@@ -12,6 +12,7 @@ class Settings(BaseSettings):
     API_V1_STR: str = "/api/v1"
     API_APP: str = "app.main:app"
     # SERVER_HOSTNAME: str
+    BASE_URL: str
     PORT: int = 9000
 
     API_CLIENT_KEY: str
@@ -33,7 +34,6 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 8
 
     DATABASE_URL: str
-    # TEST_DATABASE_URL: Optional[str] = None
 
     GITHUB_OAUTH_CLIENT_ID: str
     GITHUB_OAUTH_CLIENT_SECRET: str
