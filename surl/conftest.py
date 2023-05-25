@@ -1,16 +1,18 @@
 import asyncio
-from typing import AsyncGenerator
+from typing import AsyncGenerator, Optional
 
 import pytest
-from httpx import AsyncClient
+from httpx import AsyncClient, Response
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
 from sqlmodel import SQLModel
 
+from app.core.config import Settings, get_settings
+from app.db.crud.crud_session import crud_session
 from app.db.session import get_db
 from app.main import app
 from app.schemas.auth import TokenPayload
-from app.core.config import Settings, get_settings
+from app.schemas.session import SessionDb, SessionDbRead, SessionHttp
 
 settings: Settings = get_settings()
 
@@ -49,7 +51,8 @@ def db_url() -> str:
 
 @pytest.fixture()
 async def create_db(
-    anyio_backend: str, db_url: str
+    # anyio_backend: str,
+    db_url: str,
 ) -> AsyncGenerator[AsyncEngine, None]:
     """Create a test database and use it for the whole test session."""
     test_engine: AsyncEngine = create_async_engine(
@@ -69,8 +72,8 @@ async def create_db(
     # run test
     yield test_engine
 
-    # async with test_engine.begin() as conn:
-    #     await conn.run_sync(SQLModel.metadata.drop_all)
+    async with test_engine.begin() as conn:
+        await conn.run_sync(SQLModel.metadata.drop_all)
 
     # Drop the entire database
     # drop_database(db_url)
@@ -108,3 +111,21 @@ async def async_client(db_session: AsyncSession, base_url: str):
 
     async with AsyncClient(app=app, base_url=base_url) as ac:
         yield ac
+
+
+@pytest.fixture
+async def create_session(
+    async_client: AsyncClient,
+    db_session: AsyncSession,
+) -> SessionHttp:
+    response: Response = await async_client.post("v1/session")
+    session_cookie: Optional[str] = response.cookies.get("session")
+    first_session_db: Optional[SessionDb] = await crud_session.get_first(db=db_session)
+
+    assert first_session_db, "Session was expected to be created (db layer)"
+    assert session_cookie, "Session cookie expected to be set "
+
+    return SessionHttp(
+        session=SessionDbRead(**first_session_db.dict()),
+        cookie=session_cookie,
+    )

@@ -31,11 +31,14 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType, ListSchema
         self.list_model = list_model
 
     async def get(
-        self, db: AsyncSession, id: Union[uuid.UUID, str]
+        self,
+        db: AsyncSession,
+        id: Union[uuid.UUID, str],
     ) -> Optional[ModelType]:
         stmt = select(self.model).where(self.model.id == id)
         result = await db.execute(stmt)
         entry = result.scalar_one_or_none()
+
         return entry
 
     async def get_multi(

@@ -95,6 +95,10 @@ alembic-upgrade-head:
 alembic-upgrade:
 	docker compose -f docker/docker-compose.local.yml exec api python -m alembic.config upgrade +1
 
+.PHONY: alembic-downgrade-base
+alembic-downgrade-base:
+	docker compose -f docker/docker-compose.local.yml exec api python -m alembic.config downgrade base
+
 .PHONY: alembic-downgrade
 alembic-downgrade:
 	docker compose -f docker/docker-compose.local.yml exec api python -m alembic.config downgrade -1

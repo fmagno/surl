@@ -29,9 +29,10 @@ from app.core.logging import setup_logger
 from app.db.sanity import check_db_is_ready
 from app.db.session import close_engine
 from app.routes.v1 import router_v1
-from app.services.session import SessionService, get_session_service
 
-from app.services.session import create_service as create_session_service
+# from app.services.session import SessionService, get_session_service
+
+# from app.services.session import create_service as create_session_service
 
 logger: logging.Logger = logging.getLogger(__name__)
 settings: Settings = get_settings()

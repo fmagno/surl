@@ -7,13 +7,13 @@ from sqlmodel import Relationship, SQLModel
 from app.schemas.base import Base
 
 if TYPE_CHECKING:
-    from app.schemas.url import UrlDb
     from app.schemas.session import SessionDb
+    from app.schemas.url import UrlDb
 
 
 class UserBase(BaseModel):
     name: str
-    email: str
+    email: Optional[str] = None
 
 
 # DB schemas

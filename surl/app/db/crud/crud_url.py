@@ -9,6 +9,7 @@ from sqlalchemy.sql.expression import func
 
 from app.db.crud.crud_base import CRUDBase
 from app.schemas.url import UrlDb, UrlDbCreate, UrlDbList, UrlDbUpdate
+from app.schemas.user import UserDb, UserDbCreate
 
 logger: Logger = logging.getLogger(__name__)
 
@@ -34,6 +35,33 @@ class CRUDUrl(CRUDBase[UrlDb, UrlDbCreate, UrlDbUpdate, UrlDbList]):
         result = await db.execute(stmt)
         entries = result.scalars().all()
         return self.list_model(data=entries, count=count)
+
+    async def create_with_user(
+        self,
+        db: AsyncSession,
+        obj_in: UrlDbCreate,
+        user: UserDb,
+        flush: bool = True,
+        commit: bool = False,
+        refresh: bool = False,
+    ) -> UrlDb:
+        url: UrlDb = await self.create(
+            db=db,
+            obj_in=obj_in,
+            flush=False,
+        )
+        url.user = user
+
+        if flush:
+            await db.flush()
+
+        if commit:
+            await db.commit()
+
+        if refresh and (flush or commit):
+            await db.refresh(user)
+
+        return url
 
 
 crud_url = CRUDUrl(UrlDb, UrlDbList)

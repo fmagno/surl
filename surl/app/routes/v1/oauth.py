@@ -1,6 +1,7 @@
 from base64 import urlsafe_b64decode, urlsafe_b64encode
 from datetime import timedelta
 from http import client
+from operator import attrgetter
 from typing import Optional
 from uuid import UUID, uuid4
 
@@ -21,8 +22,6 @@ from app.schemas.auth import Token, TokenPayload
 from app.schemas.http_errors import HTTP401UnauthorizedContent
 from app.schemas.oauth import State
 from app.utils.github_client import get_oauth2_access_token
-
-from operator import attrgetter
 
 oauth_router = APIRouter()
 settings: Settings = get_settings()

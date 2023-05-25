@@ -1,7 +1,11 @@
 import logging
 from logging import Logger
+from typing import Optional
 
-from app.db.crud.crud_base import CRUDBase
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.future import select
+
+from app.db.crud.crud_base import CRUDBase, ModelType
 from app.schemas.session import (
     SessionDb,
     SessionDbCreate,
@@ -20,7 +24,15 @@ class CRUDSession(
         SessionDbList,
     ]
 ):
-    ...
+    async def get_first(
+        self,
+        db: AsyncSession,
+    ) -> Optional[SessionDb]:
+        # stmt = select(self.model).where(self.model.id == id)
+        stmt = select(self.model)
+        result = await db.execute(stmt)
+        entry = result.scalars().first()
+        return entry
 
 
 crud_session = CRUDSession(

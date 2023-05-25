@@ -1,40 +1,58 @@
 import datetime as dt
-import uuid
-from uuid import UUID
+from typing import Optional
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Body, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.auth import oauth2_token_payload
+from app.db.crud.crud_url import crud_url
 from app.db.session import get_db
-from app.schemas.auth import TokenPayload
-from app.schemas.url import UrlRouteCreate, UrlRouteRetrieve
-
-# from fastapi.encoders import jsonable_encoder
-# from pydantic.networks import EmailStr
+from app.schemas.url import (
+    UrlDb,
+    UrlDbCreate,
+    UrlDbRead,
+    UrlRouteCreate,
+    UrlRouteRetrieve,
+)
+from app.schemas.user import UserDb, UserDbRead
+from app.services.user import get_or_create_user
+from app.db.crud.crud_user import crud_user
+from app.exceptions.url import CreateUrlUserNotFoundError
+from app.services.url import gen_short_uuid
 
 
 url_router = APIRouter()
 
 
-@url_router.post("/", response_model=UrlRouteRetrieve)
+@url_router.post("", response_model=UrlRouteRetrieve)
 async def create_url(
     *,
     db: AsyncSession = Depends(get_db),
+    user: UserDbRead = Depends(get_or_create_user),
     url: UrlRouteCreate,
-    auth_token_payload: TokenPayload = Depends(oauth2_token_payload),
 ) -> UrlRouteRetrieve:
     """Create new url."""
-    new_url = UrlRouteRetrieve(
-        id=uuid.UUID("f129f2c0-c9cd-4738-b9ad-65d74469ba27"),
-        short="",
-        target="",
-        is_private=False,
-        expiry_period=100,
-        added_at=dt.datetime.now(),
-        user_id=uuid.UUID("f7750343-fa77-4e01-8016-1004cd11575a"),
+
+    user_db: Optional[UserDb] = await crud_user.get(
+        db=db,
+        id=user.id,
     )
-    return new_url
+    if not user_db:
+        raise CreateUrlUserNotFoundError()
+
+    url_db: UrlDb = await crud_url.create_with_user(
+        db=db,
+        obj_in=UrlDbCreate(
+            **url.dict(),
+            short=gen_short_uuid(),
+            added_at=dt.datetime.now(),
+        ),
+        user=user_db,
+        commit=True,
+    )
+
+    url_db_read = UrlRouteRetrieve(**url_db.dict())
+
+    return url_db_read
 
 
 # @url_router.get("/", response_model=UrlRouteList)

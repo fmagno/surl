@@ -1,28 +1,29 @@
-from pydantic import BaseModel
+import datetime as dt
 import uuid
-from sqlmodel import Field, Relationship
 from typing import TYPE_CHECKING
 
-from app.schemas.base import Base
+from pydantic import BaseModel
+from sqlmodel import Field, Relationship
 
+from app.schemas.base import Base
 
 if TYPE_CHECKING:
     from app.schemas.user import UserDb
 
 
 class SessionBase(BaseModel):
-    ...
+    created_at: dt.datetime
 
 
 class SessionDbRead(SessionBase):
-    ...
+    id: uuid.UUID
 
 
 class SessionDbCreate(SessionBase):
-    ...
+    created_at: dt.datetime = dt.datetime.now()
 
 
-class SessionDbUpdate(SessionBase):
+class SessionDbUpdate(BaseModel):
     ...
 
 
@@ -36,3 +37,8 @@ class SessionDb(Base, table=True):
 
     user: "UserDb" = Relationship(back_populates="sessions")
     user_id: uuid.UUID = Field(default=None, foreign_key="user.id")
+
+
+class SessionHttp(BaseModel):
+    session: SessionDbRead
+    cookie: str
