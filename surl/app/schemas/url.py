@@ -1,22 +1,31 @@
 import datetime as dt
 import uuid
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, List, Optional
 
 from pydantic import BaseModel, Extra
-from sqlmodel import Column, DateTime, Field, Relationship, SQLModel, func
+
+# from sqlmodel import Column, DateTime, Field, Relationship, SQLModel, func
 
 from app.schemas.base import Base
+from app.schemas.url_user import UrlUserLinkDb
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+import datetime as dt
+from sqlalchemy import func
+
 
 if TYPE_CHECKING:
     from app.schemas.user import UserDb
 
 
-class UrlBase(SQLModel):
+class UrlBase(BaseModel):
     short: str
     target: str
     is_private: bool
     expiry_period: int
     added_at: dt.datetime
+
+    class Config:
+        orm_mode = True
 
 
 # DB schemas
@@ -28,7 +37,7 @@ class UrlDbCreate(UrlBase, extra=Extra.forbid):
     ...
 
 
-class UrlDbUpdate(SQLModel):
+class UrlDbUpdate(BaseModel):
     short: Optional[str]
     target: Optional[str]
     is_private: Optional[bool]
@@ -41,15 +50,23 @@ class UrlDbList(BaseModel):
     data: list[UrlDbRead]
 
 
-class UrlDb(Base, UrlBase, table=True):
+class UrlDb(Base):
     __tablename__ = "url"
 
-    added_at: dt.datetime = Field(
-        sa_column=Column(DateTime(timezone=True), server_default=func.now())
+    short: Mapped[str]
+    target: Mapped[str]
+    is_private: Mapped[bool]
+    expiry_period: Mapped[int]
+
+    added_at: Mapped[dt.datetime] = mapped_column(
+        default=dt.datetime.utcnow(),
+        server_default=func.now(),
     )
 
-    user: "UserDb" = Relationship(back_populates="urls")
-    user_id: uuid.UUID = Field(default=None, foreign_key="user.id")
+    users: Mapped[list["UserDb"]] = relationship(
+        back_populates="urls",
+        secondary=UrlUserLinkDb,
+    )
 
 
 # Routing schemas
@@ -62,7 +79,15 @@ class UrlRouteCreate(BaseModel):
 
 
 class UrlRouteRetrieve(UrlDbRead):
-    user_id: uuid.UUID
+    users: list[uuid.UUID]
+
+    @classmethod
+    def parse_url_db(cls, url_db: UrlDb) -> "UrlRouteRetrieve":
+        url_db_dict = url_db.__dict__
+        url_db_dict["users"] = [user.id for user in url_db.users]
+        url_route_retrieve = cls.parse_obj(url_db_dict)
+
+        return url_route_retrieve
 
 
 class UrlRouteList(BaseModel):

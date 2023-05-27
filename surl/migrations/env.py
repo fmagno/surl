@@ -4,10 +4,12 @@ from logging.config import fileConfig
 from alembic import context
 from sqlalchemy import engine_from_config, pool
 from sqlalchemy.ext.asyncio import AsyncEngine
-from sqlmodel import SQLModel
+
+# from sqlmodel import SQLModel
 
 from app.core.config import get_settings
-from app.db.models import *  # noqa
+from app.db.models import *
+from app.schemas.base import Base  # noqa
 
 app_settings = get_settings()
 
@@ -23,7 +25,7 @@ fileConfig(config.config_file_name)
 
 # add your model's MetaData object here
 # for 'autogenerate' support
-target_metadata = SQLModel.metadata
+target_metadata = Base.metadata
 
 
 def run_migrations_offline():

@@ -5,7 +5,8 @@ import pytest
 from httpx import AsyncClient, Response
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
-from sqlmodel import SQLModel
+
+# from sqlmodel import SQLModel
 
 from app.core.config import Settings, get_settings
 from app.db.crud.crud_session import crud_session
@@ -13,6 +14,7 @@ from app.db.session import get_db
 from app.main import app
 from app.schemas.auth import TokenPayload
 from app.schemas.session import SessionDb, SessionDbRead, SessionHttp
+from app.schemas.base import Base
 
 settings: Settings = get_settings()
 
@@ -65,15 +67,15 @@ async def create_db(
 
     # create tables
     async with test_engine.begin() as conn:
-        await conn.run_sync(SQLModel.metadata.drop_all)
+        await conn.run_sync(Base.metadata.drop_all)
     async with test_engine.begin() as conn:
-        await conn.run_sync(SQLModel.metadata.create_all)
+        await conn.run_sync(Base.metadata.create_all)
 
     # run test
     yield test_engine
 
     async with test_engine.begin() as conn:
-        await conn.run_sync(SQLModel.metadata.drop_all)
+        await conn.run_sync(Base.metadata.drop_all)
 
     # Drop the entire database
     # drop_database(db_url)

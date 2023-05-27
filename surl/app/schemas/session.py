@@ -3,7 +3,8 @@ import uuid
 from typing import TYPE_CHECKING
 
 from pydantic import BaseModel
-from sqlmodel import Field, Relationship
+from sqlalchemy import ForeignKey
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.schemas.base import Base
 
@@ -13,6 +14,9 @@ if TYPE_CHECKING:
 
 class SessionBase(BaseModel):
     created_at: dt.datetime
+
+    class Config:
+        orm_mode = True
 
 
 class SessionDbRead(SessionBase):
@@ -32,11 +36,17 @@ class SessionDbList(BaseModel):
     data: list[SessionDbRead]
 
 
-class SessionDb(Base, table=True):
+class SessionDb(Base):
     __tablename__ = "session"
 
-    user: "UserDb" = Relationship(back_populates="sessions")
-    user_id: uuid.UUID = Field(default=None, foreign_key="user.id")
+    user: Mapped["UserDb"] = relationship(
+        back_populates="sessions",
+    )
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("user.id"),
+        default=None,
+        nullable=True,
+    )
 
 
 class SessionHttp(BaseModel):

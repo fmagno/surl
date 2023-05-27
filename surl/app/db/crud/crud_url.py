@@ -36,11 +36,11 @@ class CRUDUrl(CRUDBase[UrlDb, UrlDbCreate, UrlDbUpdate, UrlDbList]):
         entries = result.scalars().all()
         return self.list_model(data=entries, count=count)
 
-    async def create_with_user(
+    async def create_with_users(
         self,
         db: AsyncSession,
         obj_in: UrlDbCreate,
-        user: UserDb,
+        users: list[UserDb],
         flush: bool = True,
         commit: bool = False,
         refresh: bool = False,
@@ -50,7 +50,7 @@ class CRUDUrl(CRUDBase[UrlDb, UrlDbCreate, UrlDbUpdate, UrlDbList]):
             obj_in=obj_in,
             flush=False,
         )
-        url.user = user
+        url.users = users
 
         if flush:
             await db.flush()
@@ -59,7 +59,7 @@ class CRUDUrl(CRUDBase[UrlDb, UrlDbCreate, UrlDbUpdate, UrlDbList]):
             await db.commit()
 
         if refresh and (flush or commit):
-            await db.refresh(user)
+            await db.refresh(users)
 
         return url
 

@@ -1,24 +1,10 @@
-import datetime as dt
-from typing import Optional
+from fastapi import APIRouter, Depends
 
-from fastapi import APIRouter, Body, Depends
-from sqlalchemy.ext.asyncio import AsyncSession
-
-from app.db.crud.crud_url import crud_url
-from app.db.session import get_db
-from app.schemas.url import (
-    UrlDb,
-    UrlDbCreate,
-    UrlDbRead,
-    UrlRouteCreate,
-    UrlRouteRetrieve,
-)
-from app.schemas.user import UserDb, UserDbRead
-from app.services.user import get_or_create_user
-from app.db.crud.crud_user import crud_user
+from app.core.exceptions import HTTP400BadRequestException
 from app.exceptions.url import CreateUrlUserNotFoundError
-from app.services.url import gen_short_uuid
-
+from app.exceptions.user import CreateUserSessionNotFoundError
+from app.schemas.url import UrlRouteCreate, UrlRouteRetrieve
+from app.services.url import UrlService, get_url_service
 
 url_router = APIRouter()
 
@@ -26,33 +12,21 @@ url_router = APIRouter()
 @url_router.post("", response_model=UrlRouteRetrieve)
 async def create_url(
     *,
-    db: AsyncSession = Depends(get_db),
-    user: UserDbRead = Depends(get_or_create_user),
+    url_svc: UrlService = Depends(get_url_service),
     url: UrlRouteCreate,
 ) -> UrlRouteRetrieve:
     """Create new url."""
 
-    user_db: Optional[UserDb] = await crud_user.get(
-        db=db,
-        id=user.id,
-    )
-    if not user_db:
-        raise CreateUrlUserNotFoundError()
+    try:
+        url_route_retrieve: UrlRouteRetrieve = await url_svc.create_url(
+            url=url,
+        )
+    except CreateUrlUserNotFoundError:
+        raise HTTP400BadRequestException()
+    except CreateUserSessionNotFoundError:
+        raise HTTP400BadRequestException()
 
-    url_db: UrlDb = await crud_url.create_with_user(
-        db=db,
-        obj_in=UrlDbCreate(
-            **url.dict(),
-            short=gen_short_uuid(),
-            added_at=dt.datetime.now(),
-        ),
-        user=user_db,
-        commit=True,
-    )
-
-    url_db_read = UrlRouteRetrieve(**url_db.dict())
-
-    return url_db_read
+    return url_route_retrieve
 
 
 # @url_router.get("/", response_model=UrlRouteList)

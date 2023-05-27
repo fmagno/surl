@@ -104,5 +104,6 @@ async def get_or_create_session(
             db=db,
             request=request,
         )
-    session_db_read = SessionDbRead(**session_db.dict())
+    # session_db_read = SessionDbRead(**session_db.dict())
+    session_db_read: SessionDbRead = SessionDbRead.from_orm(session_db)
     return session_db_read

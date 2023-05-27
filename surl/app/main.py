@@ -5,8 +5,8 @@ from typing import Optional
 import uvicorn
 from fastapi import Depends, FastAPI, Request, Response, status
 from fastapi.middleware import Middleware
-from fastapi_utils.session import FastAPISessionMaker
-from fastapi_utils.timing import add_timing_middleware
+
+# from fastapi_utils.timing import add_timing_middleware
 
 # from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 from starlette.middleware.cors import CORSMiddleware
@@ -50,7 +50,7 @@ app = FastAPI(
 )
 
 # FastAPIInstrumentor.instrument_app(app)  # experimental
-add_timing_middleware(app, record=logger.debug, prefix="profile")
+# add_timing_middleware(app, record=logger.debug, prefix="profile")
 
 if settings.CORS_ORIGINS:
     app.add_middleware(

@@ -9,7 +9,7 @@ from sqlalchemy import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy.sql.expression import func
-from sqlmodel import delete
+from sqlalchemy import delete
 
 from app.schemas.base import Base
 
@@ -67,8 +67,8 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType, ListSchema
         commit: bool = False,
         refresh: bool = False,
     ) -> ModelType:
-        obj_in_data = jsonable_encoder(obj_in)
-        db_obj = self.model(**obj_in_data)  # type: ignore
+        # obj_in_data = jsonable_encoder(obj_in)
+        db_obj = self.model(**obj_in.dict())  # type: ignore
         db.add(db_obj)
 
         if flush:

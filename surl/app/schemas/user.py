@@ -1,10 +1,13 @@
 import uuid
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, List, Optional
 
 from pydantic import BaseModel, Extra
-from sqlmodel import Relationship, SQLModel
+
+# from sqlmodel import Relationship, SQLModel
 
 from app.schemas.base import Base
+from app.schemas.url_user import UrlUserLinkDb
+from sqlalchemy.orm import Mapped, relationship, mapped_column
 
 if TYPE_CHECKING:
     from app.schemas.session import SessionDb
@@ -14,6 +17,9 @@ if TYPE_CHECKING:
 class UserBase(BaseModel):
     name: str
     email: Optional[str] = None
+
+    class Config:
+        orm_mode = True
 
 
 # DB schemas
@@ -27,7 +33,7 @@ class UserDbCreate(UserBase, extra=Extra.forbid):
     ...
 
 
-class UserDbUpdate(SQLModel):
+class UserDbUpdate(BaseModel):
     name: Optional[str]
     email: Optional[str]
 
@@ -37,11 +43,20 @@ class UserDbList(BaseModel):
     data: list[UserDbRead]
 
 
-class UserDb(Base, UserBase, table=True):
+class UserDb(Base):
     __tablename__ = "user"
 
-    urls: list["UrlDb"] = Relationship(back_populates="user")
-    sessions: list["SessionDb"] = Relationship(back_populates="user")
+    name: Mapped[str]
+    email: Mapped[str] = mapped_column(nullable=True)
+
+    sessions: Mapped[list["SessionDb"]] = relationship(
+        back_populates="user",
+    )
+
+    urls: Mapped[list["UrlDb"]] = relationship(
+        back_populates="users",
+        secondary=UrlUserLinkDb,
+    )
 
 
 # Routing schemas

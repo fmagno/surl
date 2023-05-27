@@ -39,6 +39,8 @@ COPY --chown=${USER_ID}:${GROUP_ID} ./surl/requirements/local.lock.txt /requirem
 
 RUN pip install -U pip && \
     pip install -r /requirements/local.lock.txt
+# pip install sqlalchemy==2.0.15
+
 
 COPY --chown=${USER_ID}:${GROUP_ID} ./docker/local/api/entrypoint /entrypoint
 COPY --chown=${USER_ID}:${GROUP_ID} ./docker/local/api/start /start

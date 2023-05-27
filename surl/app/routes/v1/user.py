@@ -61,7 +61,7 @@ async def list_urls(
         # urls: UrlRouteList = parse_obj_as(UrlRouteList, urls_db)
         urls: UrlRouteList = UrlRouteList(
             count=urls_db.count,
-            data=[UrlRouteRetrieve(**u.dict(), user_id=user_id) for u in urls_db.data],
+            data=[UrlRouteRetrieve(**u.dict(), users=[user_id]) for u in urls_db.data],
         )
 
     except Exception as e:
