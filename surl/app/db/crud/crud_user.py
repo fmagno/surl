@@ -9,7 +9,7 @@ from sqlalchemy import select
 from app.db.crud.crud_base import CRUDBase
 from app.schemas.session import SessionDb
 from app.schemas.user import UserDb, UserDbCreate, UserDbList, UserDbUpdate
-from sqlalchemy.orm import joinedload
+from sqlalchemy.orm import joinedload, aliased
 
 
 logger: Logger = logging.getLogger(__name__)
@@ -21,21 +21,38 @@ class CRUDUser(CRUDBase[UserDb, UserDbCreate, UserDbUpdate, UserDbList]):
         db: AsyncSession,
         session_id: uuid.UUID,
     ) -> Optional[UserDb]:
+        s = aliased(SessionDb)
+        # stmt = (
+        #     select(UserDb)
+        #     .join(s, UserDb.id == s.user_id)
+        #     .where(s.id == session_id)
+        #     .options(joinedload(UserDb.sessions))
+        # )
         stmt = (
-            # select(UserDb)
-            # .join(UserDb.sessions)
-            # .where(SessionDb.id == session_id)
             select(UserDb)
-            .options(joinedload(UserDb.sessions, innerjoin=True))
-            .where(SessionDb.id == session_id)
+            # .join(SessionDb, UserDb.id == SessionDb.user_id)
+            # .join(SessionDb)
+            .where(SessionDb.id == session_id).options(joinedload(UserDb.sessions))
         )
-
-        # stmt = select(UserDb, SessionDb).where(SessionDb.id == session_id)
         result = await db.execute(stmt)
-        # entry = result.scalars().one_or_none()
         entry = result.scalars().unique().one_or_none()
-        # entry = result.scalar_one_or_none()
         return entry
+
+        # stmt = (
+        #     # select(UserDb)
+        #     # .join(UserDb.sessions)
+        #     # .where(SessionDb.id == session_id)
+        #     select(UserDb)
+        #     .options(joinedload(UserDb.sessions, innerjoin=True))
+        #     .where(SessionDb.id == session_id)
+        # )
+
+        # # stmt = select(UserDb, SessionDb).where(SessionDb.id == session_id)
+        # result = await db.execute(stmt)
+        # # entry = result.scalars().one_or_none()
+        # entry = result.scalars().unique().one_or_none()
+        # # entry = result.scalar_one_or_none()
+        # return entry
 
     async def create_with_sessions(
         self,
