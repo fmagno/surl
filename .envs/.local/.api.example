@@ -41,7 +41,7 @@ S3_BUCKET_NAME=basins
 
 # Localtunnel
 # ------------------------------------------------------------------------------
-LOCALTUNNEL_SUBDOMAIN=nbapp
+LOCALTUNNEL_SUBDOMAIN=surl
 
 # Terminal
 # ------------------------------------------------------------------------------

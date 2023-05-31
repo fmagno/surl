@@ -2,8 +2,9 @@ from base64 import urlsafe_b64decode, urlsafe_b64encode
 from datetime import timedelta
 from http import client
 from operator import attrgetter
-from typing import Optional
+from typing import Optional, cast
 from uuid import UUID, uuid4
+import uuid
 
 from fastapi import APIRouter, Depends, Request, Response, status
 from fastapi.encoders import jsonable_encoder
@@ -22,6 +23,20 @@ from app.schemas.auth import Token, TokenPayload
 from app.schemas.http_errors import HTTP401UnauthorizedContent
 from app.schemas.oauth import State
 from app.utils.github_client import get_oauth2_access_token
+from app.services.session import get_or_create_session
+from app.schemas.session import SessionDbRead
+from app.schemas.user import UserDb, UserDbCreate, UserDbRead
+from app.services.user import get_or_create_user
+
+from itsdangerous.url_safe import URLSafeSerializer
+
+from app.db.crud.crud_user import crud_user
+from app.db.crud.crud_url import crud_url
+from app.db.session import get_db
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.schemas.url import UrlDbCreate, UrlDbList
+
 
 oauth_router = APIRouter()
 settings: Settings = get_settings()
@@ -35,19 +50,28 @@ settings: Settings = get_settings()
 async def login(
     # form_data: OAuth2ClientCredentialsRequestForm = Depends(),
     # basic_auth_user_pass: Optional[HTTPBasicCredentials] = Depends(basic_auth_token),
+    user: UserDbRead = Depends(get_or_create_user),
 ) -> RedirectResponse:
     """"""
-    # construct redirect URL for the authorisation server with:
-    #   - redirect URL to the endpoint responsible for code - token exchange
-    #   - client_id
-
-    # client_id: str = "e7f6c07286db18050e21"
-    # code_redirect_uri: str = "https://surl.loca.lt/api/v1/oauth/code"
     login: str = ""
     # scope: str = "read:user user:email"
-    state: str = urlsafe_b64encode(
-        State(next="https://github.com/api/docs", salt="01010101010").json().encode()
-    ).decode()
+    # state: str = urlsafe_b64encode(
+    #     State(
+    #         user_id=user.id,
+    #     )
+    #     .json()
+    #     .encode()
+    # ).decode()
+
+    serializer = URLSafeSerializer(
+        secret_key=settings.SECRET_KEY,
+        salt="oauth",
+    )
+    state_encrypted: str = str(
+        serializer.dumps(
+            State(user_id=user.id).json(),
+        ),
+    )
 
     github_authorize_url: str = (
         # github
@@ -56,7 +80,7 @@ async def login(
         f"&redirect_uri={settings.GITHUB_OAUTH_CODE_REDIRECT_URI}"
         f"&login={login}"
         f"&scope={settings.GITHUB_OAUTH_SCOPE}"
-        f"&state={state}"
+        f"&state={state_encrypted}"
         f"&allow_signup={settings.GITHUB_OAUTH_ALLOW_SIGNUP}"
     )
 
@@ -72,19 +96,51 @@ async def login(
 )
 async def code(
     request: Request,
+    *,
+    db: AsyncSession = Depends(get_db),
     code: str,
     state: str,
+    response: Response,
     # form_data: OAuth2ClientCredentialsRequestForm = Depends(),
     # basic_auth_user_pass: Optional[HTTPBasicCredentials] = Depends(basic_auth_token),
 ) -> RedirectResponse:
     """"""
-    s: State = State.parse_raw(urlsafe_b64decode(state.encode()).decode())
+    # s: State = State.parse_raw(urlsafe_b64decode(state.encode()).decode())
+    serializer = URLSafeSerializer(
+        secret_key=settings.SECRET_KEY,
+        salt="oauth",
+    )
+    state_decrypted: State = State.parse_raw(serializer.loads(state))
+    anon_user_id: uuid.UUID = state_decrypted.user_id
+
     token = await get_oauth2_access_token(
         client_id=settings.GITHUB_OAUTH_CLIENT_ID,
         client_secret=settings.GITHUB_OAUTH_CLIENT_SECRET,
         code=code,
         redirect_uri=settings.GITHUB_OAUTH_CODE_REDIRECT_URI,
     )
+
+    # create new user in db: authenticated user
+    # urls = get_multi_url_by_user_id(anonymous_user.id)
+    # for each url in urls: Url(**url.dict(excludes="id"))
+
+    auth_user: UserDb = await crud_user.create(
+        db=db,
+        obj_in=UserDbCreate(name="auth user", email=""),
+    )
+
+    urls: UrlDbList = await crud_url.get_multi_by_user_id(
+        db=db,
+        user_id=anon_user_id,
+    )
+
+    for url in urls:
+        await crud_url.create(
+            db=db,
+            obj_in=UrlDbCreate(
+                **url.dict(exclude={"id"}),
+            ),
+        )
 
     # print(request.headers)
 

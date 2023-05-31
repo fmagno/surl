@@ -1,6 +1,6 @@
+import uuid
 from pydantic import BaseModel
 
 
 class State(BaseModel):
-    next: str
-    salt: str
+    user_id: uuid.UUID
