@@ -21,38 +21,15 @@ class CRUDUser(CRUDBase[UserDb, UserDbCreate, UserDbUpdate, UserDbList]):
         db: AsyncSession,
         session_id: uuid.UUID,
     ) -> Optional[UserDb]:
-        s = aliased(SessionDb)
-        # stmt = (
-        #     select(UserDb)
-        #     .join(s, UserDb.id == s.user_id)
-        #     .where(s.id == session_id)
-        #     .options(joinedload(UserDb.sessions))
-        # )
         stmt = (
             select(UserDb)
-            # .join(SessionDb, UserDb.id == SessionDb.user_id)
-            # .join(SessionDb)
-            .where(SessionDb.id == session_id).options(joinedload(UserDb.sessions))
+            .join(SessionDb, UserDb.id == SessionDb.user_id)
+            .where(SessionDb.id == session_id)
+            .options(joinedload(UserDb.sessions))
         )
         result = await db.execute(stmt)
         entry = result.scalars().unique().one_or_none()
         return entry
-
-        # stmt = (
-        #     # select(UserDb)
-        #     # .join(UserDb.sessions)
-        #     # .where(SessionDb.id == session_id)
-        #     select(UserDb)
-        #     .options(joinedload(UserDb.sessions, innerjoin=True))
-        #     .where(SessionDb.id == session_id)
-        # )
-
-        # # stmt = select(UserDb, SessionDb).where(SessionDb.id == session_id)
-        # result = await db.execute(stmt)
-        # # entry = result.scalars().one_or_none()
-        # entry = result.scalars().unique().one_or_none()
-        # # entry = result.scalar_one_or_none()
-        # return entry
 
     async def create_with_sessions(
         self,
