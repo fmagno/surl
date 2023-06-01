@@ -96,6 +96,6 @@ async def get_or_create_user(
             sessions=[session_db],
         )
 
-    # user_db_read = UserDbRead(**user.dict())
     user_db_read: UserDbRead = UserDbRead.from_orm(user)
+
     return user_db_read

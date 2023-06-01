@@ -35,8 +35,10 @@ from app.db.crud.crud_url import crud_url
 from app.db.session import get_db
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.schemas.url import UrlDbCreate, UrlDbList
+from app.schemas.url import UrlDb, UrlDbCreate, UrlDbList
+from app.exceptions.oauth import UserNotFoundException
 
+from pydantic import parse_obj_as
 
 oauth_router = APIRouter()
 settings: Settings = get_settings()
@@ -50,6 +52,8 @@ settings: Settings = get_settings()
 async def login(
     # form_data: OAuth2ClientCredentialsRequestForm = Depends(),
     # basic_auth_user_pass: Optional[HTTPBasicCredentials] = Depends(basic_auth_token),
+    *,
+    db: AsyncSession = Depends(get_db),
     user: UserDbRead = Depends(get_or_create_user),
 ) -> RedirectResponse:
     """"""
@@ -84,6 +88,8 @@ async def login(
         f"&allow_signup={settings.GITHUB_OAUTH_ALLOW_SIGNUP}"
     )
 
+    await db.commit()
+
     return RedirectResponse(
         github_authorize_url,
     )
@@ -111,9 +117,22 @@ async def code(
         salt="oauth",
     )
     state_decrypted: State = State.parse_raw(serializer.loads(state))
-    anon_user_id: uuid.UUID = state_decrypted.user_id
+    user_id: uuid.UUID = state_decrypted.user_id
+    user_db: Optional[UserDb] = await crud_user.get(
+        db=db,
+        id=user_id,
+    )
+    if not user_db:
+        raise UserNotFoundException
 
-    token = await get_oauth2_access_token(
+    # User is already authenticated
+    # FIXME: Check user is already authenticated via token table -> user
+    if user_db.email:
+        return RedirectResponse(
+            "https://surl.loca.lt/api/docs",
+        )
+
+    token: Optional[Token] = await get_oauth2_access_token(
         client_id=settings.GITHUB_OAUTH_CLIENT_ID,
         client_secret=settings.GITHUB_OAUTH_CLIENT_SECRET,
         code=code,
@@ -127,22 +146,17 @@ async def code(
     auth_user: UserDb = await crud_user.create(
         db=db,
         obj_in=UserDbCreate(name="auth user", email=""),
+        flush=False,
     )
 
     urls: UrlDbList = await crud_url.get_multi_by_user_id(
         db=db,
-        user_id=anon_user_id,
+        user_id=user_id,
     )
 
-    for url in urls:
-        await crud_url.create(
-            db=db,
-            obj_in=UrlDbCreate(
-                **url.dict(exclude={"id"}),
-            ),
-        )
+    auth_user.urls = urls.data
 
-    # print(request.headers)
+    await db.commit()
 
     return RedirectResponse(
         "https://surl.loca.lt/api/docs",

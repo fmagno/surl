@@ -6,7 +6,7 @@ from sqlalchemy.dialects.postgresql import UUID
 # from sqlmodel import Column, DateTime, Field, SQLModel, func, text
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 from sqlalchemy import func
-
+from pydantic import BaseModel
 
 # class Base(SQLModel):
 #     created_at: datetime.datetime = Field(

@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 import datetime as dt
 import uuid
 from typing import TYPE_CHECKING, List, Optional
@@ -45,11 +46,6 @@ class UrlDbUpdate(BaseModel):
     added_at: Optional[dt.datetime]
 
 
-class UrlDbList(BaseModel):
-    count: int
-    data: list[UrlDbRead]
-
-
 class UrlDb(Base):
     __tablename__ = "url"
 
@@ -67,6 +63,12 @@ class UrlDb(Base):
         back_populates="urls",
         secondary=UrlUserLinkDb,
     )
+
+
+@dataclass
+class UrlDbList:
+    count: int
+    data: list[UrlDb]
 
 
 # Routing schemas

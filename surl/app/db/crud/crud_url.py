@@ -2,6 +2,7 @@ import logging
 import uuid
 from logging import Logger
 from typing import Optional
+from sqlalchemy import Select, Selectable
 
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
@@ -22,13 +23,36 @@ class CRUDUrl(CRUDBase[UrlDb, UrlDbCreate, UrlDbUpdate, UrlDbList]):
         skip: int = 0,
         limit: Optional[int] = None,
     ) -> UrlDbList:
-        stmt_count = (
-            select(func.count()).select_from(self.model).where(UrlDb.user_id == user_id)
+        stmt: Select = (
+            select(UrlDb)
+            .join(UrlDb.users)
+            .where(
+                UserDb.id == user_id,
+            )
         )
-        result = await db.execute(stmt_count)
-        count = result.scalar_one()
 
-        stmt = select(self.model).where(UrlDb.user_id == user_id).offset(skip)
+        stmt_count = (
+            select(func.count())
+            .select_from(UrlDb)
+            .join(UrlDb.users)
+            .where(
+                UserDb.id == user_id,
+            )
+        )
+
+        # stmt_count = (
+        #     select(func.count())
+        #     .select_from(self.model)
+        #     .where(
+        #         user_id
+        #         # user_id in UrlDb.users
+        #         # UrlDb.user_id == user_id,
+        #     )
+        # )
+        count_result = await db.execute(stmt_count)
+        count = count_result.scalar_one()
+
+        # stmt = select(self.model).where(UrlDb.user_id == user_id).offset(skip)
 
         if limit:
             stmt = stmt.limit(limit)
