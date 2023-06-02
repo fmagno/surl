@@ -17,8 +17,8 @@ class State(BaseModel):
 
 class Token(BaseModel):
     access_token: str
+    scope: str
     token_type: str
-    expires_in: float
 
 
 class TokenDb(Base):

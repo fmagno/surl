@@ -34,3 +34,23 @@ async def get_oauth2_access_token(
     token: Token = Token.parse_obj(response_payload)
 
     return token
+
+
+async def get_user(
+    token: Token,
+) -> None:
+    async with AsyncClient(base_url=f"https://api.github.com/user") as ac:
+        response: Response = await ac.post(
+            "",
+            headers={
+                "Accept": "application/json",
+                "Accept": "application/vnd.github+json",
+                "Authorization": "Bearer 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",
+                "X-GitHub-Api-Version": "2022-11-28",
+            },
+        )
+    if response.status_code != httpx.codes.OK:
+        return None
+
+    response_payload = response.json()
+    print("")

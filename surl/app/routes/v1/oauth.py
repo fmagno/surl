@@ -15,7 +15,11 @@ from app.exceptions.oauth import UserNotFoundException
 from app.schemas.oauth import State, Token
 from app.schemas.url import UrlDbList
 from app.schemas.user import UserDb, UserDbCreate, UserDbRead
-from app.utils.github_client import get_oauth2_access_token, Token as GithubToken
+from app.utils.github_client import (
+    get_oauth2_access_token,
+    Token as GithubToken,
+    get_user,
+)
 
 
 oauth_router = APIRouter()
@@ -108,7 +112,10 @@ async def code(
     )
     token: Token = Token(**github_token.dict())
 
-    #
+    github_user = await get_user(github_token)
+
+    print(token)
+    raise
 
     auth_user: UserDb = await crud_user.create(
         db=db,
