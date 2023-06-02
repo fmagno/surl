@@ -7,7 +7,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core import security
 from app.db.crud.crud_session import crud_session
-from app.schemas.auth import Token, TokenPayload
+
+# from app.schemas.auth import Token, TokenPayload
 from app.schemas.session import SessionDb, SessionDbList, SessionHttp
 
 

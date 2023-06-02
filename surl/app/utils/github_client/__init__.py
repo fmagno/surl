@@ -31,6 +31,6 @@ async def get_oauth2_access_token(
         return None
 
     response_payload = response.json()
-    token = Token.parse_obj(response_payload)
+    token: Token = Token.parse_obj(response_payload)
 
     return token

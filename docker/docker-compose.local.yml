@@ -48,3 +48,4 @@ services:
     command: --local-host api --port 9000 --subdomain ${LOCALTUNNEL_SUBDOMAIN:-surl}
     depends_on:
       - api
+    restart: always

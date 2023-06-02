@@ -6,15 +6,17 @@ from httpx import AsyncClient, Response
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
 
-# from sqlmodel import SQLModel
-
 from app.core.config import Settings, get_settings
 from app.db.crud.crud_session import crud_session
 from app.db.session import get_db
 from app.main import app
-from app.schemas.auth import TokenPayload
-from app.schemas.session import SessionDb, SessionDbRead, SessionHttp
 from app.schemas.base import Base
+
+# from app.schemas.auth import TokenPayload
+from app.schemas.session import SessionDb, SessionDbRead, SessionHttp
+
+# from sqlmodel import SQLModel
+
 
 settings: Settings = get_settings()
 

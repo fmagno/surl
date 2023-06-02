@@ -1,17 +1,16 @@
-from dataclasses import dataclass
 import datetime as dt
 import uuid
+from dataclasses import dataclass
 from typing import TYPE_CHECKING, List, Optional
 
 from pydantic import BaseModel, Extra
-
-# from sqlmodel import Column, DateTime, Field, Relationship, SQLModel, func
+from sqlalchemy import func
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.schemas.base import Base
 from app.schemas.url_user import UrlUserLinkDb
-from sqlalchemy.orm import Mapped, mapped_column, relationship
-import datetime as dt
-from sqlalchemy import func
+
+# from sqlmodel import Column, DateTime, Field, Relationship, SQLModel, func
 
 
 if TYPE_CHECKING:
@@ -47,7 +46,7 @@ class UrlDbUpdate(BaseModel):
 
 
 class UrlDb(Base):
-    __tablename__ = "url"
+    __tablename__: str = "url"
 
     short: Mapped[str]
     target: Mapped[str]

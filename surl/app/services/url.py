@@ -3,17 +3,14 @@ import random
 import string
 from typing import Optional
 
-from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.crud.crud_url import crud_url
 from app.db.crud.crud_user import crud_user
-from app.db.session import get_db
 from app.exceptions.url import CreateUrlUserNotFoundError
 from app.schemas.url import UrlDb, UrlDbCreate, UrlRouteCreate, UrlRouteRetrieve
 from app.schemas.user import UserDb, UserDbRead
 from app.services.base import BaseService
-from app.services.user import get_or_create_user
 
 ALPHABET: str = string.ascii_lowercase + string.digits
 
@@ -67,20 +64,6 @@ async def create_url_service(
     user: UserDbRead,
 ) -> UrlService:
     url_svc: UrlService = UrlService(
-        db=db,
-        user=user,
-    )
-    return url_svc
-
-
-# Injectable Dependencies ############
-
-
-async def get_url_service(
-    db: AsyncSession = Depends(get_db),
-    user: UserDbRead = Depends(get_or_create_user),
-) -> UrlService:
-    url_svc: UrlService = await create_url_service(
         db=db,
         user=user,
     )

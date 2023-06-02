@@ -1,12 +1,10 @@
 import uuid
 from typing import Optional
 
-from sqlalchemy import ForeignKey, Table
-from app.schemas.base import Base
-from sqlalchemy.orm import mapped_column
+from sqlalchemy import Column, ForeignKey, Table
 from sqlalchemy.orm import Mapped, mapped_column
-from sqlalchemy import Table, Column
 
+from app.schemas.base import Base
 
 # class UrlUserLinkDb(Base):
 #     __tablename__ = "url_user_link"

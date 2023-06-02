@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, Response, status
 
-from app.services.session import get_or_create_session
+from app.deps.session import get_or_create_session
 
 session_router = APIRouter()
 

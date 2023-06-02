@@ -1,44 +1,22 @@
-from base64 import urlsafe_b64decode, urlsafe_b64encode
-from datetime import timedelta
-from http import client
-from operator import attrgetter
-from typing import Optional, cast
-from uuid import UUID, uuid4
 import uuid
+from typing import Optional
 
-from fastapi import APIRouter, Depends, Request, Response, status
-from fastapi.encoders import jsonable_encoder
+from fastapi import APIRouter, Depends, Request, Response
 from fastapi.responses import RedirectResponse
-from fastapi.security import HTTPBasicCredentials
-
-from app.core import security
-from app.core.auth import (
-    OAuth2ClientCredentialsRequestForm,
-    basic_auth_token,
-    oauth2_token_payload,
-)
-from app.core.config import Settings, get_settings
-from app.core.exceptions import HTTP401UnauthorizedException
-from app.schemas.auth import Token, TokenPayload
-from app.schemas.http_errors import HTTP401UnauthorizedContent
-from app.schemas.oauth import State
-from app.utils.github_client import get_oauth2_access_token
-from app.services.session import get_or_create_session
-from app.schemas.session import SessionDbRead
-from app.schemas.user import UserDb, UserDbCreate, UserDbRead
-from app.services.user import get_or_create_user
-
 from itsdangerous.url_safe import URLSafeSerializer
-
-from app.db.crud.crud_user import crud_user
-from app.db.crud.crud_url import crud_url
-from app.db.session import get_db
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.schemas.url import UrlDb, UrlDbCreate, UrlDbList
+from app.core.config import Settings, get_settings
+from app.db.crud.crud_url import crud_url
+from app.db.crud.crud_user import crud_user
+from app.db.session import get_db
+from app.deps.user import get_or_create_user
 from app.exceptions.oauth import UserNotFoundException
+from app.schemas.oauth import State, Token
+from app.schemas.url import UrlDbList
+from app.schemas.user import UserDb, UserDbCreate, UserDbRead
+from app.utils.github_client import get_oauth2_access_token, Token as GithubToken
 
-from pydantic import parse_obj_as
 
 oauth_router = APIRouter()
 settings: Settings = get_settings()
@@ -46,27 +24,15 @@ settings: Settings = get_settings()
 
 @oauth_router.get(
     "/login",
-    # response_model=RedirectResponse,
     include_in_schema=True,
 )
 async def login(
-    # form_data: OAuth2ClientCredentialsRequestForm = Depends(),
-    # basic_auth_user_pass: Optional[HTTPBasicCredentials] = Depends(basic_auth_token),
     *,
     db: AsyncSession = Depends(get_db),
     user: UserDbRead = Depends(get_or_create_user),
 ) -> RedirectResponse:
     """"""
     login: str = ""
-    # scope: str = "read:user user:email"
-    # state: str = urlsafe_b64encode(
-    #     State(
-    #         user_id=user.id,
-    #     )
-    #     .json()
-    #     .encode()
-    # ).decode()
-
     serializer = URLSafeSerializer(
         secret_key=settings.SECRET_KEY,
         salt="oauth",
@@ -107,8 +73,6 @@ async def code(
     code: str,
     state: str,
     response: Response,
-    # form_data: OAuth2ClientCredentialsRequestForm = Depends(),
-    # basic_auth_user_pass: Optional[HTTPBasicCredentials] = Depends(basic_auth_token),
 ) -> RedirectResponse:
     """"""
     # s: State = State.parse_raw(urlsafe_b64decode(state.encode()).decode())
@@ -118,30 +82,33 @@ async def code(
     )
     state_decrypted: State = State.parse_raw(serializer.loads(state))
     user_id: uuid.UUID = state_decrypted.user_id
-    user_db: Optional[UserDb] = await crud_user.get(
+    # user_db: Optional[UserDb] = await crud_user.get(
+    #     db=db,
+    #     id=user_id,
+    # )
+
+    user_db: UserDb = await crud_user.get_with_tokens_ordered_by_created_at(
         db=db,
         id=user_id,
     )
+
     if not user_db:
         raise UserNotFoundException
 
-    # User is already authenticated
-    # FIXME: Check user is already authenticated via token table -> user
-    if user_db.email:
+    if user_db.tokens:
         return RedirectResponse(
             "https://surl.loca.lt/api/docs",
         )
 
-    token: Optional[Token] = await get_oauth2_access_token(
+    github_token: GithubToken = await get_oauth2_access_token(
         client_id=settings.GITHUB_OAUTH_CLIENT_ID,
         client_secret=settings.GITHUB_OAUTH_CLIENT_SECRET,
         code=code,
         redirect_uri=settings.GITHUB_OAUTH_CODE_REDIRECT_URI,
     )
+    token: Token = Token(**github_token.dict())
 
-    # create new user in db: authenticated user
-    # urls = get_multi_url_by_user_id(anonymous_user.id)
-    # for each url in urls: Url(**url.dict(excludes="id"))
+    #
 
     auth_user: UserDb = await crud_user.create(
         db=db,
@@ -161,20 +128,3 @@ async def code(
     return RedirectResponse(
         "https://surl.loca.lt/api/docs",
     )
-
-
-# @auth_router.post(
-#     "/test-token",
-#     status_code=status.HTTP_204_NO_CONTENT,
-#     responses={
-#         status.HTTP_401_UNAUTHORIZED: {
-#             "model": HTTP401UnauthorizedContent,
-#             "description": "Not authenticated",
-#         },
-#     },
-# )
-# async def test_token(
-#     auth_token_payload: TokenPayload = Depends(oauth2_token_payload),
-# ) -> Response:
-#     """Test access token."""
-#     return Response(status_code=status.HTTP_204_NO_CONTENT)

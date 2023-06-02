@@ -2,8 +2,8 @@ import logging
 import uuid
 from logging import Logger
 from typing import Optional
-from sqlalchemy import Select, Selectable
 
+from sqlalchemy import Select, Selectable
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy.sql.expression import func

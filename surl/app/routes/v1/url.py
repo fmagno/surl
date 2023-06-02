@@ -1,10 +1,10 @@
 from fastapi import APIRouter, Depends
 
 from app.core.exceptions import HTTP400BadRequestException
+from app.deps.url import UrlService, get_url_service
 from app.exceptions.url import CreateUrlUserNotFoundError
 from app.exceptions.user import CreateUserSessionNotFoundError
 from app.schemas.url import UrlRouteCreate, UrlRouteRetrieve
-from app.services.url import UrlService, get_url_service
 
 url_router = APIRouter()
 

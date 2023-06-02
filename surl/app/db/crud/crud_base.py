@@ -5,11 +5,10 @@ from typing import Any, Dict, Generic, Iterable, List, Optional, Type, TypeVar, 
 
 from fastapi.encoders import jsonable_encoder
 from pydantic import BaseModel
-from sqlalchemy import insert
+from sqlalchemy import delete, insert
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy.sql.expression import func
-from sqlalchemy import delete
 
 from app.schemas.base import Base
 

@@ -2,14 +2,16 @@ import uuid
 from typing import TYPE_CHECKING, List, Optional
 
 from pydantic import BaseModel, Extra
-
-# from sqlmodel import Relationship, SQLModel
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.schemas.base import Base
 from app.schemas.url_user import UrlUserLinkDb
-from sqlalchemy.orm import Mapped, relationship, mapped_column
+
+# from sqlmodel import Relationship, SQLModel
+
 
 if TYPE_CHECKING:
+    from app.schemas.oauth import TokenDb
     from app.schemas.session import SessionDb
     from app.schemas.url import UrlDb
 
@@ -56,6 +58,10 @@ class UserDb(Base):
     urls: Mapped[list["UrlDb"]] = relationship(
         back_populates="users",
         secondary=UrlUserLinkDb,
+    )
+
+    tokens: Mapped[list["TokenDb"]] = relationship(
+        back_populates="user",
     )
 
 
