@@ -2,11 +2,15 @@ from typing import Optional
 
 import httpx
 from httpx import AsyncClient, Response
+from pydantic import parse_obj_as
 
-from .schemas import Token
+from app.exceptions.oauth import GithubUserEmailsNotFoundException
+
+from .schemas import Token, User, UserEmail
+import requests
 
 
-async def get_oauth2_access_token(
+async def get_access_token(
     client_id: str,
     client_secret: str,
     code: str,
@@ -38,19 +42,43 @@ async def get_oauth2_access_token(
 
 async def get_user(
     token: Token,
-) -> None:
-    async with AsyncClient(base_url=f"https://api.github.com/user") as ac:
-        response: Response = await ac.post(
-            "",
+) -> Optional[User]:
+    async with AsyncClient(base_url="https://api.github.com") as ac:
+        response: Response = await ac.get(
+            "/user",
             headers={
-                "Accept": "application/json",
                 "Accept": "application/vnd.github+json",
-                "Authorization": "Bearer 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",
+                "Authorization": f"{token.token_type.capitalize()} {token.access_token}",
                 "X-GitHub-Api-Version": "2022-11-28",
             },
         )
+
     if response.status_code != httpx.codes.OK:
         return None
 
     response_payload = response.json()
-    print("")
+    user: User = User.parse_obj(response_payload)
+
+    return user
+
+
+async def get_user_emails(
+    token: Token,
+) -> Optional[list[UserEmail]]:
+    async with AsyncClient(base_url="https://api.github.com") as ac:
+        response: Response = await ac.get(
+            "/user/emails",
+            headers={
+                "Accept": "application/vnd.github+json",
+                "Authorization": f"{token.token_type.capitalize()} {token.access_token}",
+                "X-GitHub-Api-Version": "2022-11-28",
+            },
+        )
+
+    if response.status_code != httpx.codes.OK:
+        return None
+
+    response_payload = response.json()
+    user_emails: list[UserEmail] = parse_obj_as(list[UserEmail], response_payload)
+
+    return user_emails

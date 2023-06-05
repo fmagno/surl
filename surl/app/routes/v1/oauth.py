@@ -11,15 +11,28 @@ from app.db.crud.crud_url import crud_url
 from app.db.crud.crud_user import crud_user
 from app.db.session import get_db
 from app.deps.user import get_or_create_user
-from app.exceptions.oauth import UserNotFoundException
-from app.schemas.oauth import State, Token
+from app.exceptions.oauth import (
+    GithubUserNotFoundException,
+    GithubUserEmailsNotFoundException,
+    GithubUserPublicEmailNotFoundException,
+    TokenNotRetrievedException,
+    UserNotFoundException,
+)
+from app.schemas.oauth import State, Token, TokenDbCreate
 from app.schemas.url import UrlDbList
 from app.schemas.user import UserDb, UserDbCreate, UserDbRead
 from app.utils.github_client import (
-    get_oauth2_access_token,
+    get_access_token,
     Token as GithubToken,
     get_user,
+    get_user_emails,
 )
+from app.utils.github_client.schemas import (
+    User,
+    UserEmail,
+)
+from app.db.crud.crud_oauth import crud_oauth
+from app.db.crud.crud_session import crud_session
 
 
 oauth_router = APIRouter()
@@ -86,16 +99,11 @@ async def code(
     )
     state_decrypted: State = State.parse_raw(serializer.loads(state))
     user_id: uuid.UUID = state_decrypted.user_id
-    # user_db: Optional[UserDb] = await crud_user.get(
-    #     db=db,
-    #     id=user_id,
-    # )
 
     user_db: UserDb = await crud_user.get_with_tokens_ordered_by_created_at(
         db=db,
         id=user_id,
     )
-
     if not user_db:
         raise UserNotFoundException
 
@@ -104,22 +112,54 @@ async def code(
             "https://surl.loca.lt/api/docs",
         )
 
-    github_token: GithubToken = await get_oauth2_access_token(
+    gh_token: Optional[GithubToken] = await get_access_token(
         client_id=settings.GITHUB_OAUTH_CLIENT_ID,
         client_secret=settings.GITHUB_OAUTH_CLIENT_SECRET,
         code=code,
         redirect_uri=settings.GITHUB_OAUTH_CODE_REDIRECT_URI,
     )
-    token: Token = Token(**github_token.dict())
+    if not gh_token:
+        raise TokenNotRetrievedException
 
-    github_user = await get_user(github_token)
+    token: Token = Token(**gh_token.dict())
+    serializer = URLSafeSerializer(
+        secret_key=settings.SECRET_KEY,
+        salt="oauth",
+    )
+    access_token_encrypted: str = str(
+        serializer.dumps(token.access_token),
+    )
+    await crud_oauth.create(
+        db=db,
+        obj_in=TokenDbCreate(
+            **token.dict(),
+            access_token_encrypted=access_token_encrypted,
+            expires_in=1,
+        ),
+        flush=False,
+    )
 
-    print(token)
-    raise
+    gh_user: Optional[User] = await get_user(gh_token)
+    if not gh_user:
+        raise GithubUserNotFoundException
+
+    gh_user_emails: Optional[list[UserEmail]] = await get_user_emails(gh_token)
+    if not gh_user_emails:
+        raise GithubUserEmailsNotFoundException
+
+    gh_user_public_email: Optional[UserEmail] = next(
+        (email for email in gh_user_emails if email.visibility == "public"),
+        None,
+    )
+    if not gh_user_public_email:
+        raise GithubUserPublicEmailNotFoundException
 
     auth_user: UserDb = await crud_user.create(
         db=db,
-        obj_in=UserDbCreate(name="auth user", email=""),
+        obj_in=UserDbCreate(
+            name=gh_user.name,
+            email=gh_user_public_email.email,
+        ),
         flush=False,
     )
 
@@ -127,8 +167,11 @@ async def code(
         db=db,
         user_id=user_id,
     )
-
     auth_user.urls = urls.data
+
+    # TODO: update session to point to the user
+    # await crud_session.update(db=db,)
+    # user_db.sessions
 
     await db.commit()
 
