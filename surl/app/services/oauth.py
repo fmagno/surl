@@ -55,8 +55,8 @@ class OAuthService(BaseService):
         request: Request,
     ) -> None:
         super().__init__(db=db)
-        self.user = user
-        self.request = request
+        self.user: UserDbRead = user
+        self.request: Request = request
 
         self.serializer = URLSafeSerializer(
             secret_key=settings.SECRET_KEY,
