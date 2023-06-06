@@ -11,6 +11,7 @@ async def get_oauth_service(
     request: Request,
     db: AsyncSession = Depends(get_db),
     user: UserDbRead = Depends(get_or_create_user),
+    # user: UserDbRead = Depends(GetOrCreateUser(commit=True)),
 ) -> OAuthService:
     oauth_svc: OAuthService = await create_oauth_service(
         db=db,

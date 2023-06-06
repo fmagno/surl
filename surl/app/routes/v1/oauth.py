@@ -50,10 +50,7 @@ settings: Settings = get_settings()
     include_in_schema=True,
 )
 async def login(
-    *,
     oauth_svc: OAuthService = Depends(get_oauth_service),
-    # db: AsyncSession = Depends(get_db),
-    # user: UserDbRead = Depends(get_or_create_user),
 ) -> RedirectResponse:
     """"""
     try:
@@ -72,10 +69,8 @@ async def login(
     include_in_schema=True,
 )
 async def code(
-    request: Request,
     *,
     oauth_svc: OAuthService = Depends(get_oauth_service),
-    db: AsyncSession = Depends(get_db),
     code: str,
     state: str,
 ) -> RedirectResponse:

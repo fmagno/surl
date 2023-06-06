@@ -29,6 +29,51 @@ async def get_user_service(db: AsyncSession = Depends(get_db)) -> UserService:
     return user_svc
 
 
+# class GetOrCreateUser:
+#     def __init__(
+#         self,
+#         flush: Optional[bool] = True,
+#         commit: Optional[bool] = False,
+#         refresh: Optional[bool] = False,
+#     ):
+#         self.flush: Optional[bool] = flush
+#         self.commit: Optional[bool] = commit
+#         self.refresh: Optional[bool] = refresh
+
+#     async def __call__(
+#         self,
+#         db: AsyncSession = Depends(get_db),
+#         session: SessionDbRead = Depends(get_or_create_session),
+#     ):
+#         """Returns one of:
+#         - Previously authenticated user (oauth2)
+#         - Previously created anonymous user
+#         - A newly created anonymous user
+#         """
+
+#         user: Optional[UserDb] = await crud_user.get_by_session_id(
+#             db=db,
+#             session_id=session.id,
+#         )
+#         if not user:
+#             session_db: Optional[SessionDb] = await crud_session.get(
+#                 db=db,
+#                 id=session.id,
+#             )
+#             if not session_db:
+#                 raise CreateUserSessionNotFoundError()
+
+#             user = await crud_user.create_with_sessions(
+#                 db=db,
+#                 obj_in=UserDbCreate(name="anonymous"),
+#                 sessions=[session_db],
+#             )
+
+#         user_db_read: UserDbRead = UserDbRead.from_orm(user)
+
+#         return user_db_read
+
+
 async def get_or_create_user(
     db: AsyncSession = Depends(get_db),
     session: SessionDbRead = Depends(get_or_create_session),
