@@ -3,7 +3,7 @@ import uuid
 from logging import Logger
 from typing import Optional
 
-from sqlalchemy import Result, select
+from sqlalchemy import Result, Select, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import aliased, joinedload, contains_eager
 
@@ -76,6 +76,43 @@ class CRUDUser(CRUDBase[UserDb, UserDbCreate, UserDbUpdate, UserDbList]):
         entry: UserDb = result.unique().scalar_one_or_none()
 
         return entry
+
+    async def get_by_email_with_urls(
+        self,
+        db: AsyncSession,
+        email: str,
+    ) -> UserDb:
+        stmt: Select = (
+            select(UserDb)
+            .join(UserDb.urls, isouter=True)
+            .where(UserDb.email == email)
+            .options(contains_eager(UserDb.urls))
+        )
+        result: Result = await db.execute(stmt)
+        entry = result.unique().scalar_one_or_none()
+        return entry
+
+    async def get_or_create_with_urls(
+        self,
+        db: AsyncSession,
+        obj_in: UserDbCreate,
+        flush: bool = True,
+        commit: bool = False,
+        refresh: bool = False,
+    ) -> UserDb:
+        user: UserDb = await self.get_by_email_with_urls(
+            db=db,
+            email=obj_in.email,
+        )
+        if not user:
+            user = await self.create(
+                db=db,
+                obj_in=obj_in,
+                flush=flush,
+                commit=commit,
+                refresh=refresh,
+            )
+        return user
 
 
 crud_user = CRUDUser(UserDb, UserDbList)

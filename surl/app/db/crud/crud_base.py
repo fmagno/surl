@@ -15,7 +15,7 @@ from app.schemas.base import Base
 ModelType = TypeVar("ModelType", bound=Base)
 CreateSchemaType = TypeVar("CreateSchemaType", bound=BaseModel)
 UpdateSchemaType = TypeVar("UpdateSchemaType", bound=BaseModel)
-ListSchemaType = TypeVar("ListSchemaType", bound=BaseModel)
+ListSchemaType = TypeVar("ListSchemaType")
 
 logger: logging.Logger = logging.getLogger(__name__)
 

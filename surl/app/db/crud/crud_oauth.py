@@ -24,7 +24,29 @@ class CRUDOAuth(
         TokenDbList,
     ]
 ):
-    ...
+    async def create_with_user(
+        self,
+        db: AsyncSession,
+        obj_in: TokenDbCreate,
+        user: UserDb,
+        flush: bool = True,
+        commit: bool = False,
+        refresh: bool = False,
+    ) -> TokenDb:
+        # obj_in_data = jsonable_encoder(obj_in)
+        db_obj = TokenDb(**obj_in.dict(), user=user)
+        db.add(db_obj)
+
+        if flush:
+            await db.flush()
+
+        if commit:
+            await db.commit()
+
+        if refresh and (flush or commit):
+            await db.refresh(db_obj)
+
+        return db_obj
 
 
 crud_oauth = CRUDOAuth(TokenDb, TokenDbList)

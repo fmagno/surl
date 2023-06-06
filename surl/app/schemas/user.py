@@ -17,7 +17,7 @@ if TYPE_CHECKING:
 
 
 class UserBase(BaseModel):
-    name: str
+    name: Optional[str]
     email: Optional[str] = None
 
     class Config:
@@ -48,7 +48,7 @@ class UserDbList(BaseModel):
 class UserDb(Base):
     __tablename__ = "user"
 
-    name: Mapped[str]
+    name: Mapped[str] = mapped_column(nullable=True)
     email: Mapped[str] = mapped_column(nullable=True)
 
     sessions: Mapped[list["SessionDb"]] = relationship(

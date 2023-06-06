@@ -46,9 +46,9 @@ class SessionDb(Base):
     )
 
 
-@dataclass
-class SessionDbUpdate:
-    user: Optional["UserDb"]
+class SessionDbUpdate(BaseModel):
+    ...
+    # user: Optional["UserDb"]
 
 
 class SessionHttp(BaseModel):

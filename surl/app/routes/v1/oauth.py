@@ -82,7 +82,7 @@ async def code(
     """"""
 
     try:
-        redirect_url = await oauth_svc.code(
+        redirect_url = await oauth_svc.exchange_code_for_token(
             code=code,
             state=state,
         )

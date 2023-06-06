@@ -40,8 +40,9 @@ from app.schemas.oauth import State, Token, TokenDbCreate
 from app.db.crud.crud_oauth import crud_oauth
 from app.db.crud.crud_session import crud_session
 from app.exceptions.session import SessionNotFoundException
-from app.schemas.session import SessionDb
+from app.schemas.session import SessionDb, SessionDbUpdate
 from app.utils.github_client.schemas import User, UserEmail
+from app.routes.v1.session import use
 
 
 settings: Settings = get_settings()
@@ -87,7 +88,7 @@ class OAuthService(BaseService):
         await self.db.commit()
         return github_authorize_url
 
-    async def code(
+    async def exchange_code_for_token(
         self,
         code: str,
         state: str,
@@ -114,24 +115,6 @@ class OAuthService(BaseService):
         if not gh_token:
             raise TokenNotRetrievedException
 
-        token: Token = Token(**gh_token.dict())
-        serializer = URLSafeSerializer(
-            secret_key=settings.SECRET_KEY,
-            salt="oauth",
-        )
-        access_token_encrypted: str = str(
-            serializer.dumps(token.access_token),
-        )
-        await crud_oauth.create(
-            db=self.db,
-            obj_in=TokenDbCreate(
-                **token.dict(),
-                access_token_encrypted=access_token_encrypted,
-                expires_in=1,
-            ),
-            flush=False,
-        )
-
         gh_user: Optional[User] = await get_user(gh_token)
         if not gh_user:
             raise GithubUserNotFoundException
@@ -140,19 +123,33 @@ class OAuthService(BaseService):
         if not gh_user_emails:
             raise GithubUserEmailsNotFoundException
 
-        gh_user_public_email: Optional[UserEmail] = next(
-            (email for email in gh_user_emails if email.visibility == "public"),
-            None,
-        )
-        if not gh_user_public_email:
-            raise GithubUserPublicEmailNotFoundException
+        gh_user_email: UserEmail = gh_user_emails[0]
 
-        auth_user: UserDb = await crud_user.create(
+        auth_user: UserDb = await crud_user.get_or_create_with_urls(
             db=self.db,
             obj_in=UserDbCreate(
                 name=gh_user.name,
-                email=gh_user_public_email.email,
+                email=gh_user_email.email,
             ),
+            flush=False,
+        )
+        token: Token = Token(**gh_token.dict())
+        serializer = URLSafeSerializer(
+            secret_key=settings.SECRET_KEY,
+            salt="oauth",
+        )
+        access_token_encrypted: str = str(
+            serializer.dumps(token.access_token),
+        )
+
+        await crud_oauth.create_with_user(
+            db=self.db,
+            obj_in=TokenDbCreate(
+                **token.dict(),
+                access_token_encrypted=access_token_encrypted,
+                expires_in=1,
+            ),
+            user=auth_user,
             flush=False,
         )
 
@@ -170,10 +167,12 @@ class OAuthService(BaseService):
         if not session_db:
             raise SessionNotFoundException
 
-        session_db.user = auth_user
-        self.db.add(session_db)
-
-        await self.db.commit()
+        await crud_session.update_with_user(
+            db=self.db,
+            db_obj=session_db,
+            user=auth_user,
+            commit=True,
+        )
 
         return "https://surl.loca.lt/api/docs"
 
