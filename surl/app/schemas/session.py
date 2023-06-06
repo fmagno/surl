@@ -1,6 +1,7 @@
+from dataclasses import dataclass
 import datetime as dt
 import uuid
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 from pydantic import BaseModel
 from sqlalchemy import ForeignKey
@@ -27,10 +28,6 @@ class SessionDbCreate(SessionBase):
     created_at: dt.datetime = dt.datetime.now()
 
 
-class SessionDbUpdate(BaseModel):
-    ...
-
-
 class SessionDbList(BaseModel):
     count: int
     data: list[SessionDbRead]
@@ -47,6 +44,11 @@ class SessionDb(Base):
         default=None,
         nullable=True,
     )
+
+
+@dataclass
+class SessionDbUpdate:
+    user: Optional["UserDb"]
 
 
 class SessionHttp(BaseModel):

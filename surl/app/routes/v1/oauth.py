@@ -4,6 +4,7 @@ from typing import Optional
 from fastapi import APIRouter, Depends, Request, Response
 from fastapi.responses import RedirectResponse
 from itsdangerous.url_safe import URLSafeSerializer
+from sqlalchemy import update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import Settings, get_settings
@@ -33,6 +34,11 @@ from app.utils.github_client.schemas import (
 )
 from app.db.crud.crud_oauth import crud_oauth
 from app.db.crud.crud_session import crud_session
+from app.schemas.session import SessionDb, SessionDbUpdate
+from app.exceptions.session import SessionNotFoundException
+from app.deps.oauth import get_oauth_service
+from app.services.oauth import OAuthService
+from app.core.exceptions import HTTP400BadRequestException
 
 
 oauth_router = APIRouter()
@@ -45,33 +51,15 @@ settings: Settings = get_settings()
 )
 async def login(
     *,
-    db: AsyncSession = Depends(get_db),
-    user: UserDbRead = Depends(get_or_create_user),
+    oauth_svc: OAuthService = Depends(get_oauth_service),
+    # db: AsyncSession = Depends(get_db),
+    # user: UserDbRead = Depends(get_or_create_user),
 ) -> RedirectResponse:
     """"""
-    login: str = ""
-    serializer = URLSafeSerializer(
-        secret_key=settings.SECRET_KEY,
-        salt="oauth",
-    )
-    state_encrypted: str = str(
-        serializer.dumps(
-            State(user_id=user.id).json(),
-        ),
-    )
-
-    github_authorize_url: str = (
-        # github
-        f"{settings.GITHUB_OAUTH_AUTHORIZE_REDIRECT_URI}"
-        f"?client_id={settings.GITHUB_OAUTH_CLIENT_ID}"
-        f"&redirect_uri={settings.GITHUB_OAUTH_CODE_REDIRECT_URI}"
-        f"&login={login}"
-        f"&scope={settings.GITHUB_OAUTH_SCOPE}"
-        f"&state={state_encrypted}"
-        f"&allow_signup={settings.GITHUB_OAUTH_ALLOW_SIGNUP}"
-    )
-
-    await db.commit()
+    try:
+        github_authorize_url = await oauth_svc.login()
+    except:
+        raise HTTP400BadRequestException
 
     return RedirectResponse(
         github_authorize_url,
@@ -86,95 +74,29 @@ async def login(
 async def code(
     request: Request,
     *,
+    oauth_svc: OAuthService = Depends(get_oauth_service),
     db: AsyncSession = Depends(get_db),
     code: str,
     state: str,
-    response: Response,
 ) -> RedirectResponse:
     """"""
-    # s: State = State.parse_raw(urlsafe_b64decode(state.encode()).decode())
-    serializer = URLSafeSerializer(
-        secret_key=settings.SECRET_KEY,
-        salt="oauth",
-    )
-    state_decrypted: State = State.parse_raw(serializer.loads(state))
-    user_id: uuid.UUID = state_decrypted.user_id
 
-    user_db: UserDb = await crud_user.get_with_tokens_ordered_by_created_at(
-        db=db,
-        id=user_id,
-    )
-    if not user_db:
-        raise UserNotFoundException
-
-    if user_db.tokens:
-        return RedirectResponse(
-            "https://surl.loca.lt/api/docs",
+    try:
+        redirect_url = await oauth_svc.code(
+            code=code,
+            state=state,
         )
+    except UserNotFoundException:
+        raise HTTP400BadRequestException
+    except TokenNotRetrievedException:
+        raise HTTP400BadRequestException
+    except GithubUserNotFoundException:
+        raise HTTP400BadRequestException
+    except GithubUserEmailsNotFoundException:
+        raise HTTP400BadRequestException
+    except GithubUserPublicEmailNotFoundException:
+        raise HTTP400BadRequestException
+    except SessionNotFoundException:
+        raise HTTP400BadRequestException
 
-    gh_token: Optional[GithubToken] = await get_access_token(
-        client_id=settings.GITHUB_OAUTH_CLIENT_ID,
-        client_secret=settings.GITHUB_OAUTH_CLIENT_SECRET,
-        code=code,
-        redirect_uri=settings.GITHUB_OAUTH_CODE_REDIRECT_URI,
-    )
-    if not gh_token:
-        raise TokenNotRetrievedException
-
-    token: Token = Token(**gh_token.dict())
-    serializer = URLSafeSerializer(
-        secret_key=settings.SECRET_KEY,
-        salt="oauth",
-    )
-    access_token_encrypted: str = str(
-        serializer.dumps(token.access_token),
-    )
-    await crud_oauth.create(
-        db=db,
-        obj_in=TokenDbCreate(
-            **token.dict(),
-            access_token_encrypted=access_token_encrypted,
-            expires_in=1,
-        ),
-        flush=False,
-    )
-
-    gh_user: Optional[User] = await get_user(gh_token)
-    if not gh_user:
-        raise GithubUserNotFoundException
-
-    gh_user_emails: Optional[list[UserEmail]] = await get_user_emails(gh_token)
-    if not gh_user_emails:
-        raise GithubUserEmailsNotFoundException
-
-    gh_user_public_email: Optional[UserEmail] = next(
-        (email for email in gh_user_emails if email.visibility == "public"),
-        None,
-    )
-    if not gh_user_public_email:
-        raise GithubUserPublicEmailNotFoundException
-
-    auth_user: UserDb = await crud_user.create(
-        db=db,
-        obj_in=UserDbCreate(
-            name=gh_user.name,
-            email=gh_user_public_email.email,
-        ),
-        flush=False,
-    )
-
-    urls: UrlDbList = await crud_url.get_multi_by_user_id(
-        db=db,
-        user_id=user_id,
-    )
-    auth_user.urls = urls.data
-
-    # TODO: update session to point to the user
-    # await crud_session.update(db=db,)
-    # user_db.sessions
-
-    await db.commit()
-
-    return RedirectResponse(
-        "https://surl.loca.lt/api/docs",
-    )
+    return RedirectResponse(redirect_url)

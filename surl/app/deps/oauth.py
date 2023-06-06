@@ -1,17 +1,20 @@
-import datetime as dt
-import random
-import string
-
-from fastapi import Depends
+from fastapi import Depends, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.session import get_db
-from app.services.url import UrlService, create_url_service
-from surl.app.services.oauth import OAuthService
+from app.services.oauth import OAuthService, create_oauth_service
+from app.deps.user import get_or_create_user
+from app.schemas.user import UserDbRead
 
 
 async def get_oauth_service(
+    request: Request,
     db: AsyncSession = Depends(get_db),
+    user: UserDbRead = Depends(get_or_create_user),
 ) -> OAuthService:
-    oauth_svc: UrlService = await create_url_service(db=db)
+    oauth_svc: OAuthService = await create_oauth_service(
+        db=db,
+        user=user,
+        request=request,
+    )
     return oauth_svc
