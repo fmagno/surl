@@ -95,6 +95,16 @@ class UrlRouteList(BaseModel):
     count: int
     data: list[UrlRouteRetrieve]
 
+    @classmethod
+    def parse_url_db_list(cls, url_db_list: UrlDbList):
+        return cls(
+            count=url_db_list.count,
+            data=[UrlRouteRetrieve.parse_url_db(url_db) for url_db in url_db_list.data],
+        )
+
+    # class Config:
+    #     orm_mode = True
+
 
 class UrlRouteUpdate(BaseModel):
     is_private: Optional[bool]

@@ -1,10 +1,13 @@
+from typing import Optional
 from fastapi import APIRouter, Depends
 
 from app.core.exceptions import HTTP400BadRequestException
 from app.deps.url import UrlService, get_url_service
 from app.exceptions.url import CreateUrlUserNotFoundError
 from app.exceptions.user import CreateUserSessionNotFoundError
-from app.schemas.url import UrlRouteCreate, UrlRouteRetrieve
+from app.schemas.url import UrlRouteCreate, UrlRouteList, UrlRouteRetrieve
+from app.deps.user import get_or_create_user
+from app.schemas.user import UserDb
 
 url_router = APIRouter()
 
@@ -29,24 +32,26 @@ async def create_url(
     return url_route_retrieve
 
 
-# @url_router.get("/", response_model=UrlRouteList)
-# async def list_urls_by_user_id(
-#     db: AsyncSession = Depends(get_db),
-#     user_id: uuid.UUID,
-#     skip: int = 0,
-#     limit: int = 100,
-# ) -> UrlRouteList:
-#     """
-#     List urls.
-#     """
+@url_router.get("", response_model=UrlRouteList)
+async def list_urls_by_user_id(
+    # db: AsyncSession = Depends(get_db),
+    # user_id: uuid.UUID,
+    *,
+    url_svc: UrlService = Depends(get_url_service),
+    user: UserDb = Depends(get_or_create_user),
+    skip: int = 0,
+    limit: Optional[int] = None,
+) -> UrlRouteList:
+    """
+    List urls.
+    """
 
-#     try:
-#         urls_db: UrlDbList = await crud_url.get_multi(db, skip=skip, limit=limit)
-#         urls: UrlRouteList = parse_obj_as(UrlRouteList, urls_db)
-#     except Exception as e:
-#         raise e
-
-#     return urls
+    urls: UrlRouteList = await url_svc.get_urls_by_user_id(
+        user_id=user.id,
+        skip=skip,
+        limit=limit,
+    )
+    return urls
 
 
 # @url_router.put("/me", response_model=schemas.User)

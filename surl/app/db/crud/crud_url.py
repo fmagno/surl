@@ -11,6 +11,8 @@ from sqlalchemy.sql.expression import func
 from app.db.crud.crud_base import CRUDBase
 from app.schemas.url import UrlDb, UrlDbCreate, UrlDbList, UrlDbUpdate
 from app.schemas.user import UserDb, UserDbCreate
+from sqlalchemy.orm import aliased, contains_eager
+
 
 logger: Logger = logging.getLogger(__name__)
 
@@ -29,6 +31,7 @@ class CRUDUrl(CRUDBase[UrlDb, UrlDbCreate, UrlDbUpdate, UrlDbList]):
             .where(
                 UserDb.id == user_id,
             )
+            .options(contains_eager(UrlDb.users))
         )
 
         stmt_count = (
@@ -57,7 +60,7 @@ class CRUDUrl(CRUDBase[UrlDb, UrlDbCreate, UrlDbUpdate, UrlDbList]):
         if limit:
             stmt = stmt.limit(limit)
         result = await db.execute(stmt)
-        entries = result.scalars().all()
+        entries = result.scalars().unique().all()
         return self.list_model(data=entries, count=count)
 
     async def create_with_users(

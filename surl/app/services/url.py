@@ -2,13 +2,22 @@ import datetime as dt
 import random
 import string
 from typing import Optional
+import uuid
+from pydantic import parse_obj_as
 
+from dataclasses import asdict
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.crud.crud_url import crud_url
 from app.db.crud.crud_user import crud_user
 from app.exceptions.url import CreateUrlUserNotFoundError
-from app.schemas.url import UrlDb, UrlDbCreate, UrlRouteCreate, UrlRouteRetrieve
+from app.schemas.url import (
+    UrlDb,
+    UrlDbCreate,
+    UrlRouteCreate,
+    UrlRouteList,
+    UrlRouteRetrieve,
+)
 from app.schemas.user import UserDb, UserDbRead
 from app.services.base import BaseService
 
@@ -54,6 +63,22 @@ class UrlService(BaseService):
             url_db=url_db
         )
         return url_route_retrieve
+
+    async def get_urls_by_user_id(
+        self,
+        user_id: uuid.UUID,
+        skip: int = 0,
+        limit: Optional[int] = None,
+    ) -> UrlRouteList:
+        urls_db = await crud_url.get_multi_by_user_id(
+            db=self.db,
+            user_id=user_id,
+            skip=skip,
+            limit=limit,
+        )
+
+        urls = UrlRouteList.parse_url_db_list(urls_db)
+        return urls
 
 
 # Facade #############################
