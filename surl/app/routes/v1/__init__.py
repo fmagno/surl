@@ -5,6 +5,7 @@ from .oauth import oauth_router
 from .session import session_router
 from .url import url_router
 from .user import user_router
+from .short import short_router
 
 router_v1 = APIRouter()
 
@@ -12,4 +13,5 @@ router_v1.include_router(dev_router, prefix="/dev", tags=["dev"])
 router_v1.include_router(user_router, prefix="/users", tags=["user"])
 router_v1.include_router(url_router, prefix="/urls", tags=["url"])
 router_v1.include_router(oauth_router, prefix="/oauth", tags=["oauth"])
-router_v1.include_router(session_router, prefix="/session", tags=["sessions"])
+router_v1.include_router(session_router, prefix="/session", tags=["session"])
+router_v1.include_router(short_router, prefix="", tags=["short"])
