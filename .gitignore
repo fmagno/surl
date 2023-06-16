@@ -7,3 +7,4 @@ app.egg-info
 proj.log
 celery-worker.log
 .mypy_cache/
+
